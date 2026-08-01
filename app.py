@@ -2064,6 +2064,247 @@ CATALOGO_VARIABLES = {
 }
 
 
+
+# Familias permitidas para relacionar con cada familia principal.
+# Año no aparece como variable secundaria: se controla desde
+# el interruptor de tiempo y el selector de periodo.
+FAMILIAS_COMPATIBLES = {
+    "Sexo": {
+        "Trayectoria",
+        "Ubicación e institución",
+        "Nivel SNII",
+        "Clasificación académica",
+        "STEM",
+        "Calidad de datos",
+    },
+    "Trayectoria": {
+        "Sexo",
+        "Trayectoria",
+        "Ubicación e institución",
+        "Nivel SNII",
+        "Clasificación académica",
+        "STEM",
+        "Calidad de datos",
+    },
+    "Ubicación e institución": {
+        "Sexo",
+        "Trayectoria",
+        "Ubicación e institución",
+        "Nivel SNII",
+        "Clasificación académica",
+        "STEM",
+        "Calidad de datos",
+    },
+    "Nivel SNII": {
+        "Sexo",
+        "Trayectoria",
+        "Ubicación e institución",
+        "Clasificación académica",
+        "STEM",
+        "Calidad de datos",
+    },
+    "Clasificación académica": {
+        "Sexo",
+        "Trayectoria",
+        "Ubicación e institución",
+        "Nivel SNII",
+        "STEM",
+        "Calidad de datos",
+    },
+    "STEM": {
+        "Sexo",
+        "Trayectoria",
+        "Ubicación e institución",
+        "Nivel SNII",
+        "Clasificación académica",
+        "STEM",
+        "Calidad de datos",
+    },
+    "Calidad de datos": {
+        "Sexo",
+        "Trayectoria",
+        "Ubicación e institución",
+        "Nivel SNII",
+        "Clasificación académica",
+        "STEM",
+        "Calidad de datos",
+    },
+}
+
+
+def tipo_analitico_laboratorio(
+    variable: str,
+) -> str:
+    """Reduce los tipos técnicos a tipos analíticos."""
+
+    tipo = CATALOGO_VARIABLES[
+        variable
+    ]["tipo"]
+
+    if tipo in {
+        "categorica",
+        "binaria",
+        "ordinal",
+    }:
+        return "categorica"
+
+    if tipo == "numerica":
+        return "numerica"
+
+    return tipo
+
+
+def combinacion_variables_soportada(
+    variables: list[str],
+) -> bool:
+    """
+    Restringe combinaciones que pueden visualizarse con claridad.
+
+    Permitidas:
+    - hasta dos variables categóricas;
+    - hasta dos variables numéricas;
+    - una numérica y hasta dos categóricas;
+    - dos numéricas y una categórica.
+    """
+
+    tipos = [
+        tipo_analitico_laboratorio(
+            variable
+        )
+        for variable in variables
+    ]
+
+    if any(
+        tipo in {
+            "identificador",
+            "temporal",
+        }
+        for tipo in tipos
+    ):
+        return False
+
+    numero_categoricas = tipos.count(
+        "categorica"
+    )
+
+    numero_numericas = tipos.count(
+        "numerica"
+    )
+
+    if numero_categoricas > 2:
+        return False
+
+    if numero_numericas > 2:
+        return False
+
+    if (
+        numero_categoricas == 0
+        and numero_numericas == 0
+    ):
+        return False
+
+    return True
+
+
+def variables_compatibles_con_seleccion(
+    inventario: pd.DataFrame,
+    seleccionadas: list[str],
+) -> list[str]:
+    """
+    Devuelve variables compatibles con la selección vigente.
+
+    Se excluyen:
+    - nombres, apellidos, CVU e identificadores;
+    - Año, porque se maneja como dimensión temporal;
+    - variables vacías;
+    - combinaciones no soportadas.
+    """
+
+    disponibles = inventario.loc[
+        inventario["CON_DATOS"]
+        & inventario["TIPO"].ne(
+            "identificador"
+        )
+        & inventario["TIPO"].ne(
+            "temporal"
+        )
+        & inventario["FAMILIA"].ne(
+            "Identidad"
+        )
+    ].copy()
+
+    if not seleccionadas:
+        return (
+            disponibles.sort_values(
+                [
+                    "FAMILIA",
+                    "VARIABLE",
+                ]
+            )["VARIABLE"]
+            .tolist()
+        )
+
+    principal = seleccionadas[0]
+
+    familia_principal = (
+        CATALOGO_VARIABLES[
+            principal
+        ]["familia"]
+    )
+
+    familias_permitidas = (
+        FAMILIAS_COMPATIBLES.get(
+            familia_principal,
+            {
+                "Sexo",
+                "Trayectoria",
+                "Ubicación e institución",
+                "Nivel SNII",
+                "Clasificación académica",
+                "STEM",
+                "Calidad de datos",
+            },
+        )
+    )
+
+    candidatos = disponibles.loc[
+        disponibles["FAMILIA"].isin(
+            familias_permitidas
+        )
+        & ~disponibles["VARIABLE"].isin(
+            seleccionadas
+        )
+    ].copy()
+
+    candidatos["COMBINACION_VALIDA"] = (
+        candidatos["VARIABLE"]
+        .map(
+            lambda variable: (
+                combinacion_variables_soportada(
+                    [
+                        *seleccionadas,
+                        variable,
+                    ]
+                )
+            )
+        )
+    )
+
+    candidatos = candidatos.loc[
+        candidatos["COMBINACION_VALIDA"]
+    ]
+
+    return (
+        candidatos.sort_values(
+            [
+                "FAMILIA",
+                "VARIABLE",
+            ]
+        )["VARIABLE"]
+        .tolist()
+    )
+
+
 def normalizar_binaria_laboratorio(
     serie: pd.Series,
 ) -> pd.Series:
@@ -2167,10 +2408,22 @@ def opciones_variables_por_familia(
     inventario: pd.DataFrame,
     incluir_identificadores: bool = False,
 ) -> list[str]:
-    """Devuelve opciones agrupables y realmente disponibles."""
+    """
+    Devuelve variables aptas para el laboratorio.
+
+    Identidad y Año se excluyen porque:
+    - los nombres, apellidos, CVU e ID pertenecen al historial;
+    - Año se controla mediante la dimensión temporal.
+    """
 
     disponibles = inventario.loc[
         inventario["CON_DATOS"]
+        & inventario["FAMILIA"].ne(
+            "Identidad"
+        )
+        & inventario["TIPO"].ne(
+            "temporal"
+        )
     ].copy()
 
     if not incluir_identificadores:
@@ -3072,11 +3325,19 @@ def render_laboratorio_visualizacion(
             "ESTADO"
         ] = np.select(
             [
+                inventario_mostrar["FAMILIA"].eq(
+                    "Identidad"
+                ),
+                inventario_mostrar["TIPO"].eq(
+                    "temporal"
+                ),
                 inventario_mostrar["CON_DATOS"],
                 inventario_mostrar["EXISTE"],
             ],
             [
-                "Disponible",
+                "Uso exclusivo en Historial del investigador",
+                "Se utiliza como dimensión temporal",
+                "Disponible en el laboratorio",
                 "Existe, pero está vacía",
             ],
             default="No está en el archivo",
@@ -3287,6 +3548,12 @@ def render_laboratorio_visualizacion(
             inventario["CON_DATOS"]
             & inventario["TIPO"].ne(
                 "identificador"
+            )
+            & inventario["TIPO"].ne(
+                "temporal"
+            )
+            & inventario["FAMILIA"].ne(
+                "Identidad"
             ),
             "FAMILIA",
         ]
@@ -3309,11 +3576,23 @@ def render_laboratorio_visualizacion(
             )
             & inventario["TIPO"].ne(
                 "identificador"
+            )
+            & inventario["TIPO"].ne(
+                "temporal"
+            )
+            & inventario["FAMILIA"].ne(
+                "Identidad"
             ),
             "VARIABLE",
         ]
         .sort_values()
         .tolist()
+    )
+
+    st.caption(
+        "Las variables de identidad —nombre, apellidos, CVU e ID— "
+        "se consultan exclusivamente en el módulo Historial del "
+        "investigador. Año se controla desde la opción de tiempo."
     )
 
     columnas_variables = st.columns(3)
@@ -3331,15 +3610,20 @@ def render_laboratorio_visualizacion(
             key="lab_variable_1",
         )
 
-    opciones_restantes = [
-        variable
-        for variable in variables_disponibles
-        if variable != variable_1
-    ]
+    opciones_restantes = (
+        variables_compatibles_con_seleccion(
+            inventario,
+            [
+                variable_1,
+            ],
+        )
+    )
 
     with columnas_variables[1]:
         st.markdown(
-            '<span class="lab-chip lab-variable">Variable secundaria</span>',
+            '<span class="lab-chip lab-variable">'
+            'Variable secundaria compatible'
+            '</span>',
             unsafe_allow_html=True,
         )
 
@@ -3351,6 +3635,10 @@ def render_laboratorio_visualizacion(
             ],
             label_visibility="collapsed",
             key="lab_variable_2",
+            help=(
+                "Las opciones se filtran según la naturaleza "
+                "de la variable principal."
+            ),
         )
 
     seleccionadas = [
@@ -3362,15 +3650,18 @@ def render_laboratorio_visualizacion(
             variable_2
         )
 
-    opciones_tercera = [
-        variable
-        for variable in variables_disponibles
-        if variable not in seleccionadas
-    ]
+    opciones_tercera = (
+        variables_compatibles_con_seleccion(
+            inventario,
+            seleccionadas,
+        )
+    )
 
     with columnas_variables[2]:
         st.markdown(
-            '<span class="lab-chip lab-variable">Tercera variable</span>',
+            '<span class="lab-chip lab-variable">'
+            'Tercera variable compatible'
+            '</span>',
             unsafe_allow_html=True,
         )
 
@@ -3382,6 +3673,10 @@ def render_laboratorio_visualizacion(
             ],
             label_visibility="collapsed",
             key="lab_variable_3",
+            help=(
+                "Sólo se muestran combinaciones que pueden "
+                "representarse con claridad."
+            ),
         )
 
     if variable_3 != "Ninguna":
