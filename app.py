@@ -1680,673 +1680,368 @@ def render_investigador(df: pd.DataFrame) -> None:
 # MÓDULO 4: LABORATORIO DE VISUALIZACIÓN
 # ============================================================
 
-# El catálogo conserva las 69 variables procesadas en el master.
-# Las variables de identificación pueden utilizarse como filtros,
-# pero no se recomiendan como ejes gráficos cuando tienen alta cardinalidad.
+# Catálogo analítico curado.
+# Nombres, apellidos, CVU, Nobilis e identificadores quedan
+# exclusivamente en el módulo Historial del investigador.
 
-CATALOGO_VARIABLES = {
-    # --------------------------------------------------------
-    # IDENTIDAD
-    # --------------------------------------------------------
-    "Identificador exacto de persona": {
-        "columna": "ID_PERSONA_EXACTA",
-        "tipo": "identificador",
-        "familia": "Identidad",
-    },
-    "CVU de referencia": {
-        "columna": "CVU_REFERENCIA",
-        "tipo": "identificador",
-        "familia": "Identidad",
-    },
-    "Nombre de la persona investigadora": {
-        "columna": "NOMBRE_INVESTIGADOR",
-        "tipo": "identificador",
-        "familia": "Identidad",
-    },
-    "Nombre completo de referencia": {
-        "columna": "NOMBRE_COMPLETO_REFERENCIA",
-        "tipo": "identificador",
-        "familia": "Identidad",
-    },
-    "Apellido paterno": {
-        "columna": "APELLIDO_PATERNO_REFERENCIA_EXPEDIENTE",
-        "tipo": "categorica",
-        "familia": "Identidad",
-    },
-    "Apellido materno": {
-        "columna": "APELLIDO_MATERNO_REFERENCIA_EXPEDIENTE",
-        "tipo": "categorica",
-        "familia": "Identidad",
-    },
-    "Nombres": {
-        "columna": "NOMBRES_REFERENCIA_EXPEDIENTE",
-        "tipo": "categorica",
-        "familia": "Identidad",
-    },
-    "Nobilis consolidado": {
-        "columna": "NOBILIS_CONSOLIDADO",
-        "tipo": "categorica",
-        "familia": "Identidad",
-    },
-    "Estado de identidad consolidada": {
-        "columna": "ESTADO_IDENTIDAD_CONSOLIDADA",
-        "tipo": "categorica",
-        "familia": "Identidad",
-    },
-    "Requiere revisión de identidad": {
-        "columna": "REQUIERE_REVISION_IDENTIDAD_CONSOLIDADA",
-        "tipo": "binaria",
-        "familia": "Identidad",
-    },
-
-    # --------------------------------------------------------
-    # TIEMPO Y TRAYECTORIA
-    # --------------------------------------------------------
-    "Año": {
-        "columna": "AÑO",
-        "tipo": "temporal",
-        "familia": "Trayectoria",
-    },
-    "Primer año observado": {
-        "columna": "PRIMER_AÑO",
-        "tipo": "numerica",
-        "familia": "Trayectoria",
-    },
-    "Último año observado": {
-        "columna": "ULTIMO_AÑO",
-        "tipo": "numerica",
-        "familia": "Trayectoria",
-    },
-    "Número de años presente": {
-        "columna": "NUMERO_AÑOS_PRESENTE",
-        "tipo": "numerica",
-        "familia": "Trayectoria",
-    },
-    "Años desde el primer registro": {
-        "columna": "AÑO_DESDE_PRIMER_REGISTRO",
-        "tipo": "numerica",
-        "familia": "Trayectoria",
-    },
-    "Años hasta el último registro": {
-        "columna": "AÑO_HASTA_ULTIMO_REGISTRO",
-        "tipo": "numerica",
-        "familia": "Trayectoria",
-    },
-    "Antigüedad acumulada": {
-        "columna": "ANTIGUEDAD_ACUMULADA_AÑOS",
-        "tipo": "numerica",
-        "familia": "Trayectoria",
-    },
-    "Es primer año de la persona": {
-        "columna": "ES_PRIMER_AÑO_PERSONA",
-        "tipo": "binaria",
-        "familia": "Trayectoria",
-    },
-    "Es último año de la persona": {
-        "columna": "ES_ULTIMO_AÑO_PERSONA",
-        "tipo": "binaria",
-        "familia": "Trayectoria",
-    },
-    "Vigente en 2025": {
-        "columna": "ESTA_VIGENTE_EN_2025",
-        "tipo": "binaria",
-        "familia": "Trayectoria",
-    },
-    "Número de registros anuales": {
-        "columna": "NUMERO_REGISTROS_ANUALES",
-        "tipo": "numerica",
-        "familia": "Trayectoria",
-    },
-    "Número de registros": {
-        "columna": "NUMERO_REGISTROS",
-        "tipo": "numerica",
-        "familia": "Trayectoria",
-    },
-    "Categoría anual": {
-        "columna": "CATEGORIA_ANUAL",
-        "tipo": "categorica",
-        "familia": "Trayectoria",
-    },
-
-    # --------------------------------------------------------
-    # SEXO
-    # --------------------------------------------------------
-    "Sexo consolidado": {
-        "columna": "SEXO_CONSOLIDADO",
-        "tipo": "categorica",
-        "familia": "Sexo",
-    },
-    "Fuente del sexo": {
-        "columna": "FUENTE_SEXO",
-        "tipo": "categorica",
-        "familia": "Sexo",
-    },
-    "Confianza del sexo": {
-        "columna": "CONFIANZA_SEXO",
-        "tipo": "categorica",
-        "familia": "Sexo",
-    },
-    "Requiere revisión de sexo": {
-        "columna": "REQUIERE_REVISION_SEXO",
-        "tipo": "binaria",
-        "familia": "Sexo",
-    },
-
-    # --------------------------------------------------------
-    # UBICACIÓN E INSTITUCIÓN
-    # --------------------------------------------------------
-    "Institución anual": {
-        "columna": "INSTITUCION_ANUAL",
-        "tipo": "categorica",
-        "familia": "Ubicación e institución",
-    },
-    "Dependencia anual": {
-        "columna": "DEPENDENCIA_ANUAL",
-        "tipo": "categorica",
-        "familia": "Ubicación e institución",
-    },
-    "Subdependencia anual": {
-        "columna": "SUBDEPENDENCIA_ANUAL",
-        "tipo": "categorica",
-        "familia": "Ubicación e institución",
-    },
-    "Entidad federativa anual": {
-        "columna": "ENTIDAD_FEDERATIVA_ANUAL",
-        "tipo": "categorica",
-        "familia": "Ubicación e institución",
-    },
-    "País anual": {
-        "columna": "PAIS_ANUAL",
-        "tipo": "categorica",
-        "familia": "Ubicación e institución",
-    },
-
-    # --------------------------------------------------------
-    # NIVEL SNII
-    # --------------------------------------------------------
-    "Nivel anual original": {
-        "columna": "NIVEL_ANUAL",
-        "tipo": "categorica",
-        "familia": "Nivel SNII",
-    },
-    "Código homologado de nivel SNII": {
-        "columna": "NIVEL_SNII_STD",
-        "tipo": "ordinal",
-        "familia": "Nivel SNII",
-    },
-    "Nivel SNII homologado": {
-        "columna": "NIVEL_SNII_ETIQUETA",
-        "tipo": "categorica",
-        "familia": "Nivel SNII",
-    },
-    "Estado de homologación del nivel": {
-        "columna": "ESTADO_HOMOLOGACION_NIVEL",
-        "tipo": "categorica",
-        "familia": "Nivel SNII",
-    },
-    "Texto comparable de nivel": {
-        "columna": "_NIVEL_TEXTO_COMPARABLE",
-        "tipo": "categorica",
-        "familia": "Nivel SNII",
-    },
-    "Regla de homologación del nivel": {
-        "columna": "REGLA_HOMOLOGACION_NIVEL",
-        "tipo": "categorica",
-        "familia": "Nivel SNII",
-    },
-
-    # --------------------------------------------------------
-    # CLASIFICACIÓN ACADÉMICA
-    # --------------------------------------------------------
-    "Área del conocimiento": {
-        "columna": "AREA_DEL_CONOCIMIENTO_ANUAL",
-        "tipo": "categorica",
-        "familia": "Clasificación académica",
-    },
-    "Campo del conocimiento": {
-        "columna": "CAMPO_DEL_CONOCIMIENTO_ANUAL",
-        "tipo": "categorica",
-        "familia": "Clasificación académica",
-    },
-    "Disciplina": {
-        "columna": "DISCIPLINA_ANUAL",
-        "tipo": "categorica",
-        "familia": "Clasificación académica",
-    },
-    "Subdisciplina": {
-        "columna": "SUBDISCIPLINA_ANUAL",
-        "tipo": "categorica",
-        "familia": "Clasificación académica",
-    },
-    "Especialidad": {
-        "columna": "ESPECIALIDAD_ANUAL",
-        "tipo": "categorica",
-        "familia": "Clasificación académica",
-    },
-
-    # --------------------------------------------------------
-    # STEM Y GRANDES GRUPOS
-    # --------------------------------------------------------
-    "Clasificación académica STEM ampliada": {
-        "columna": "CLASIFICACION_STEM_ANUAL",
-        "tipo": "categorica",
-        "familia": "STEM",
-    },
-    "STEM frente a no STEM": {
-        "columna": "GRUPO_STEM_BINARIO",
-        "tipo": "categorica",
-        "familia": "STEM",
-    },
-    "Es STEM estricto": {
-        "columna": "ES_STEM_ESTRICTO",
-        "tipo": "binaria",
-        "familia": "STEM",
-    },
-    "Es STEM ampliado": {
-        "columna": "ES_STEM_AMPLIADO",
-        "tipo": "binaria",
-        "familia": "STEM",
-    },
-    "Confianza de clasificación STEM": {
-        "columna": "CONFIANZA_CLASIFICACION_STEM",
-        "tipo": "categorica",
-        "familia": "STEM",
-    },
-    "Palabras coincidentes STEM": {
-        "columna": "PALABRAS_COINCIDENTES_STEM",
-        "tipo": "categorica",
-        "familia": "STEM",
-    },
-    "Requiere revisión STEM": {
-        "columna": "REQUIERE_REVISION_STEM",
-        "tipo": "binaria",
-        "familia": "STEM",
-    },
-    "Área utilizada para STEM": {
-        "columna": "_AREA_STEM",
-        "tipo": "categorica",
-        "familia": "STEM",
-    },
-    "Campo utilizado para STEM": {
-        "columna": "_CAMPO_STEM",
-        "tipo": "categorica",
-        "familia": "STEM",
-    },
-    "Disciplina utilizada para STEM": {
-        "columna": "_DISCIPLINA_STEM",
-        "tipo": "categorica",
-        "familia": "STEM",
-    },
-    "Subdisciplina utilizada para STEM": {
-        "columna": "_SUBDISCIPLINA_STEM",
-        "tipo": "categorica",
-        "familia": "STEM",
-    },
-    "Especialidad utilizada para STEM": {
-        "columna": "_ESPECIALIDAD_STEM",
-        "tipo": "categorica",
-        "familia": "STEM",
-    },
-    "Número de fuentes académicas STEM": {
-        "columna": "NUMERO_FUENTES_ACADEMICAS_STEM",
-        "tipo": "numerica",
-        "familia": "STEM",
-    },
-    "Texto académico STEM": {
-        "columna": "TEXTO_ACADEMICO_STEM",
-        "tipo": "categorica",
-        "familia": "STEM",
-    },
-    "Clave de texto académico STEM": {
-        "columna": "TEXTO_ACADEMICO_STEM_CLAVE",
-        "tipo": "categorica",
-        "familia": "STEM",
-    },
-    "Puntaje STEM": {
-        "columna": "PUNTAJE_STEM",
-        "tipo": "numerica",
-        "familia": "STEM",
-    },
-    "Puntaje salud y biológicas": {
-        "columna": "PUNTAJE_SALUD_BIOLOGICAS",
-        "tipo": "numerica",
-        "familia": "STEM",
-    },
-    "Puntaje ciencias sociales": {
-        "columna": "PUNTAJE_SOCIALES",
-        "tipo": "numerica",
-        "familia": "STEM",
-    },
-    "Puntaje humanidades y artes": {
-        "columna": "PUNTAJE_HUMANIDADES_ARTES",
-        "tipo": "numerica",
-        "familia": "STEM",
-    },
-    "Fuente de clasificación STEM": {
-        "columna": "FUENTE_CLASIFICACION_STEM",
-        "tipo": "categorica",
-        "familia": "STEM",
-    },
-
-    # --------------------------------------------------------
-    # CALIDAD Y COMPLETITUD
-    # --------------------------------------------------------
-    "Campos clave disponibles": {
-        "columna": "NUMERO_CAMPOS_CLAVE_DISPONIBLES",
-        "tipo": "numerica",
-        "familia": "Calidad de datos",
-    },
-    "Campos clave faltantes": {
-        "columna": "NUMERO_CAMPOS_CLAVE_FALTANTES",
-        "tipo": "numerica",
-        "familia": "Calidad de datos",
-    },
-    "Porcentaje de completitud": {
-        "columna": "PORCENTAJE_COMPLETITUD_CLAVE",
-        "tipo": "numerica",
-        "familia": "Calidad de datos",
-    },
-    "Requiere revisión del master": {
-        "columna": "REQUIERE_REVISION_MASTER",
-        "tipo": "binaria",
-        "familia": "Calidad de datos",
-    },
-    "Estado del registro master": {
-        "columna": "ESTADO_REGISTRO_MASTER",
-        "tipo": "categorica",
-        "familia": "Calidad de datos",
-    },
-    "Requiere revisión del expediente": {
-        "columna": "REQUIERE_REVISION_EXPEDIENTE",
-        "tipo": "binaria",
-        "familia": "Calidad de datos",
-    },
-}
-
-
-
-# Familias permitidas para relacionar con cada familia principal.
-# Año no aparece como variable secundaria: se controla desde
-# el interruptor de tiempo y el selector de periodo.
-FAMILIAS_COMPATIBLES = {
+VARIABLES_ANALITICAS = {
     "Sexo": {
-        "Trayectoria",
-        "Ubicación e institución",
-        "Nivel SNII",
-        "Clasificación académica",
-        "STEM",
-        "Calidad de datos",
-    },
-    "Trayectoria": {
-        "Sexo",
-        "Trayectoria",
-        "Ubicación e institución",
-        "Nivel SNII",
-        "Clasificación académica",
-        "STEM",
-        "Calidad de datos",
-    },
-    "Ubicación e institución": {
-        "Sexo",
-        "Trayectoria",
-        "Ubicación e institución",
-        "Nivel SNII",
-        "Clasificación académica",
-        "STEM",
-        "Calidad de datos",
+        "familia": "Características de la persona",
+        "tipo": "categorica",
+        "alias": [
+            "SEXO_CONSOLIDADO",
+            "SEXO",
+        ],
     },
     "Nivel SNII": {
-        "Sexo",
-        "Trayectoria",
-        "Ubicación e institución",
-        "Clasificación académica",
-        "STEM",
-        "Calidad de datos",
+        "familia": "Reconocimiento SNII",
+        "tipo": "categorica",
+        "alias": [
+            "NIVEL_SNII_ETIQUETA",
+            "NIVEL_SNII",
+            "NIVEL_ANUAL",
+            "NIVEL",
+        ],
     },
-    "Clasificación académica": {
-        "Sexo",
-        "Trayectoria",
-        "Ubicación e institución",
-        "Nivel SNII",
-        "STEM",
-        "Calidad de datos",
+    "Código de nivel SNII": {
+        "familia": "Reconocimiento SNII",
+        "tipo": "ordinal",
+        "alias": [
+            "NIVEL_SNII_STD",
+            "CODIGO_NIVEL_SNII",
+        ],
     },
-    "STEM": {
-        "Sexo",
-        "Trayectoria",
-        "Ubicación e institución",
-        "Nivel SNII",
-        "Clasificación académica",
-        "STEM",
-        "Calidad de datos",
+    "STEM / No STEM": {
+        "familia": "Clasificación académica",
+        "tipo": "categorica",
+        "alias": [
+            "GRUPO_STEM_BINARIO",
+            "STEM_BINARIO",
+        ],
     },
-    "Calidad de datos": {
-        "Sexo",
-        "Trayectoria",
-        "Ubicación e institución",
-        "Nivel SNII",
-        "Clasificación académica",
-        "STEM",
-        "Calidad de datos",
+    "Clasificación STEM ampliada": {
+        "familia": "Clasificación académica",
+        "tipo": "categorica",
+        "alias": [
+            "CLASIFICACION_STEM_ANUAL",
+            "CLASIFICACION_STEM",
+        ],
+    },
+    "Área del conocimiento": {
+        "familia": "Clasificación académica",
+        "tipo": "categorica",
+        "alias": [
+            "AREA_DEL_CONOCIMIENTO_ANUAL",
+            "AREA_DEL_CONOCIMIENTO",
+            "AREA_ANUAL",
+        ],
+    },
+    "Campo del conocimiento": {
+        "familia": "Clasificación académica",
+        "tipo": "categorica",
+        "alias": [
+            "CAMPO_DEL_CONOCIMIENTO_ANUAL",
+            "CAMPO_DEL_CONOCIMIENTO",
+            "CAMPO_ANUAL",
+        ],
+    },
+    "Disciplina": {
+        "familia": "Clasificación académica",
+        "tipo": "categorica",
+        "alias": [
+            "DISCIPLINA_ANUAL",
+            "DISCIPLINA",
+        ],
+    },
+    "Subdisciplina": {
+        "familia": "Clasificación académica",
+        "tipo": "categorica",
+        "alias": [
+            "SUBDISCIPLINA_ANUAL",
+            "SUBDISCIPLINA",
+        ],
+    },
+    "Especialidad": {
+        "familia": "Clasificación académica",
+        "tipo": "categorica",
+        "alias": [
+            "ESPECIALIDAD_ANUAL",
+            "ESPECIALIDAD",
+        ],
+    },
+    "Institución": {
+        "familia": "Ubicación e institución",
+        "tipo": "categorica",
+        "alias": [
+            "INSTITUCION_ANUAL",
+            "INSTITUCION",
+        ],
+    },
+    "Dependencia": {
+        "familia": "Ubicación e institución",
+        "tipo": "categorica",
+        "alias": [
+            "DEPENDENCIA_ANUAL",
+            "DEPENDENCIA",
+        ],
+    },
+    "Subdependencia": {
+        "familia": "Ubicación e institución",
+        "tipo": "categorica",
+        "alias": [
+            "SUBDEPENDENCIA_ANUAL",
+            "SUBDEPENDENCIA",
+        ],
+    },
+    "Entidad federativa": {
+        "familia": "Ubicación e institución",
+        "tipo": "categorica",
+        "alias": [
+            "ENTIDAD_FEDERATIVA_ANUAL",
+            "ENTIDAD_FEDERATIVA",
+            "ESTADO",
+        ],
+    },
+    "País": {
+        "familia": "Ubicación e institución",
+        "tipo": "categorica",
+        "alias": [
+            "PAIS_ANUAL",
+            "PAIS",
+        ],
+    },
+    "Años con registro": {
+        "familia": "Trayectoria",
+        "tipo": "numerica",
+        "alias": [
+            "NUMERO_AÑOS_PRESENTE",
+            "NUMERO_ANIOS_PRESENTE",
+        ],
+    },
+    "Antigüedad acumulada": {
+        "familia": "Trayectoria",
+        "tipo": "numerica",
+        "alias": [
+            "ANTIGUEDAD_ACUMULADA_AÑOS",
+            "ANTIGUEDAD_ACUMULADA_ANIOS",
+        ],
+    },
+    "Primer año observado": {
+        "familia": "Trayectoria",
+        "tipo": "numerica",
+        "alias": [
+            "PRIMER_AÑO",
+            "PRIMER_ANIO",
+        ],
+    },
+    "Último año observado": {
+        "familia": "Trayectoria",
+        "tipo": "numerica",
+        "alias": [
+            "ULTIMO_AÑO",
+            "ULTIMO_ANIO",
+        ],
+    },
+    "Vigente en 2025": {
+        "familia": "Trayectoria",
+        "tipo": "binaria",
+        "alias": [
+            "ESTA_VIGENTE_EN_2025",
+            "VIGENTE_2025",
+        ],
+    },
+    "Es primer año": {
+        "familia": "Trayectoria",
+        "tipo": "binaria",
+        "alias": [
+            "ES_PRIMER_AÑO_PERSONA",
+            "ES_PRIMER_ANIO_PERSONA",
+        ],
+    },
+    "Es último año": {
+        "familia": "Trayectoria",
+        "tipo": "binaria",
+        "alias": [
+            "ES_ULTIMO_AÑO_PERSONA",
+            "ES_ULTIMO_ANIO_PERSONA",
+        ],
+    },
+    "Porcentaje de completitud": {
+        "familia": "Calidad de datos",
+        "tipo": "numerica",
+        "alias": [
+            "PORCENTAJE_COMPLETITUD_CLAVE",
+            "PORCENTAJE_COMPLETITUD",
+        ],
+    },
+    "Campos clave disponibles": {
+        "familia": "Calidad de datos",
+        "tipo": "numerica",
+        "alias": [
+            "NUMERO_CAMPOS_CLAVE_DISPONIBLES",
+        ],
+    },
+    "Campos clave faltantes": {
+        "familia": "Calidad de datos",
+        "tipo": "numerica",
+        "alias": [
+            "NUMERO_CAMPOS_CLAVE_FALTANTES",
+        ],
+    },
+    "Requiere revisión del master": {
+        "familia": "Calidad de datos",
+        "tipo": "binaria",
+        "alias": [
+            "REQUIERE_REVISION_MASTER",
+        ],
     },
 }
 
 
-def tipo_analitico_laboratorio(
+OBJETIVOS_LABORATORIO = {
+    "Distribución": {
+        "descripcion":
+            "Conocer cómo se reparte una característica en la población.",
+        "tipos_principales": [
+            "categorica",
+            "binaria",
+            "ordinal",
+            "numerica",
+        ],
+        "requiere_secundaria": False,
+        "permite_secundaria": False,
+        "tiempo_obligatorio": False,
+    },
+    "Comparación": {
+        "descripcion":
+            "Comparar una característica o medida entre dos o más grupos.",
+        "tipos_principales": [
+            "categorica",
+            "binaria",
+            "ordinal",
+            "numerica",
+        ],
+        "requiere_secundaria": True,
+        "permite_secundaria": True,
+        "tiempo_obligatorio": False,
+    },
+    "Relación": {
+        "descripcion":
+            "Explorar la asociación entre dos variables.",
+        "tipos_principales": [
+            "numerica",
+            "categorica",
+            "binaria",
+            "ordinal",
+        ],
+        "requiere_secundaria": True,
+        "permite_secundaria": True,
+        "tiempo_obligatorio": False,
+    },
+    "Evolución temporal": {
+        "descripcion":
+            "Observar cómo cambia una variable durante varios años.",
+        "tipos_principales": [
+            "categorica",
+            "binaria",
+            "ordinal",
+            "numerica",
+        ],
+        "requiere_secundaria": False,
+        "permite_secundaria": True,
+        "tiempo_obligatorio": True,
+    },
+}
+
+
+def resolver_columna_analitica(
+    df: pd.DataFrame,
     variable: str,
-) -> str:
-    """Reduce los tipos técnicos a tipos analíticos."""
+) -> str | None:
+    """Encuentra la primera columna existente y con datos."""
 
-    tipo = CATALOGO_VARIABLES[
+    for columna in VARIABLES_ANALITICAS[
         variable
-    ]["tipo"]
+    ]["alias"]:
+        if (
+            columna in df.columns
+            and df[columna].notna().any()
+        ):
+            return columna
 
-    if tipo in {
-        "categorica",
-        "binaria",
-        "ordinal",
-    }:
-        return "categorica"
-
-    if tipo == "numerica":
-        return "numerica"
-
-    return tipo
+    return None
 
 
-def combinacion_variables_soportada(
-    variables: list[str],
-) -> bool:
-    """
-    Restringe combinaciones que pueden visualizarse con claridad.
+def catalogo_analitico_disponible(
+    df: pd.DataFrame,
+) -> pd.DataFrame:
+    """Construye el catálogo analítico disponible en el master."""
 
-    Permitidas:
-    - hasta dos variables categóricas;
-    - hasta dos variables numéricas;
-    - una numérica y hasta dos categóricas;
-    - dos numéricas y una categórica.
-    """
+    filas = []
 
-    tipos = [
-        tipo_analitico_laboratorio(
-            variable
-        )
-        for variable in variables
-    ]
-
-    if any(
-        tipo in {
-            "identificador",
-            "temporal",
-        }
-        for tipo in tipos
+    for variable, especificacion in (
+        VARIABLES_ANALITICAS.items()
     ):
-        return False
-
-    numero_categoricas = tipos.count(
-        "categorica"
-    )
-
-    numero_numericas = tipos.count(
-        "numerica"
-    )
-
-    if numero_categoricas > 2:
-        return False
-
-    if numero_numericas > 2:
-        return False
-
-    if (
-        numero_categoricas == 0
-        and numero_numericas == 0
-    ):
-        return False
-
-    return True
-
-
-def variables_compatibles_con_seleccion(
-    inventario: pd.DataFrame,
-    seleccionadas: list[str],
-) -> list[str]:
-    """
-    Devuelve variables compatibles con la selección vigente.
-
-    Se excluyen:
-    - nombres, apellidos, CVU e identificadores;
-    - Año, porque se maneja como dimensión temporal;
-    - variables vacías;
-    - combinaciones no soportadas.
-    """
-
-    disponibles = inventario.loc[
-        inventario["CON_DATOS"]
-        & inventario["TIPO"].ne(
-            "identificador"
-        )
-        & inventario["TIPO"].ne(
-            "temporal"
-        )
-        & inventario["FAMILIA"].ne(
-            "Identidad"
-        )
-    ].copy()
-
-    if not seleccionadas:
-        return (
-            disponibles.sort_values(
-                [
-                    "FAMILIA",
-                    "VARIABLE",
-                ]
-            )["VARIABLE"]
-            .tolist()
+        columna = resolver_columna_analitica(
+            df,
+            variable,
         )
 
-    principal = seleccionadas[0]
-
-    familia_principal = (
-        CATALOGO_VARIABLES[
-            principal
-        ]["familia"]
-    )
-
-    familias_permitidas = (
-        FAMILIAS_COMPATIBLES.get(
-            familia_principal,
+        filas.append(
             {
-                "Sexo",
-                "Trayectoria",
-                "Ubicación e institución",
-                "Nivel SNII",
-                "Clasificación académica",
-                "STEM",
-                "Calidad de datos",
-            },
+                "VARIABLE": variable,
+                "FAMILIA": especificacion["familia"],
+                "TIPO": especificacion["tipo"],
+                "COLUMNA": columna,
+                "DISPONIBLE": columna is not None,
+            }
         )
-    )
 
-    candidatos = disponibles.loc[
-        disponibles["FAMILIA"].isin(
-            familias_permitidas
-        )
-        & ~disponibles["VARIABLE"].isin(
-            seleccionadas
-        )
-    ].copy()
-
-    candidatos["COMBINACION_VALIDA"] = (
-        candidatos["VARIABLE"]
-        .map(
-            lambda variable: (
-                combinacion_variables_soportada(
-                    [
-                        *seleccionadas,
-                        variable,
-                    ]
-                )
-            )
-        )
-    )
-
-    candidatos = candidatos.loc[
-        candidatos["COMBINACION_VALIDA"]
-    ]
-
-    return (
-        candidatos.sort_values(
-            [
-                "FAMILIA",
-                "VARIABLE",
-            ]
-        )["VARIABLE"]
-        .tolist()
+    return pd.DataFrame(
+        filas
     )
 
 
 def normalizar_binaria_laboratorio(
     serie: pd.Series,
 ) -> pd.Series:
-    """Homologa valores booleanos o binarios para visualización."""
+    """Homologa variables binarias para visualización."""
 
-    texto = (
+    return (
         serie.astype("string")
         .str.strip()
         .str.upper()
-    )
-
-    return texto.replace(
-        {
-            "TRUE": "Sí",
-            "FALSE": "No",
-            "1": "Sí",
-            "0": "No",
-            "SI": "Sí",
-            "SÍ": "Sí",
-            "NO": "No",
-        }
+        .replace(
+            {
+                "TRUE": "Sí",
+                "FALSE": "No",
+                "1": "Sí",
+                "0": "No",
+                "SI": "Sí",
+                "SÍ": "Sí",
+                "NO": "No",
+            }
+        )
     )
 
 
 def preparar_base_laboratorio(
     df: pd.DataFrame,
+    catalogo: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Prepara variables numéricas, binarias y temporales."""
+    """Prepara tipos para las variables analíticas disponibles."""
 
     base = df.copy()
 
-    for nombre, especificacion in CATALOGO_VARIABLES.items():
-        columna = especificacion["columna"]
-        tipo = especificacion["tipo"]
-
-        if columna not in base.columns:
-            continue
+    for _, fila in catalogo.loc[
+        catalogo["DISPONIBLE"]
+    ].iterrows():
+        columna = fila["COLUMNA"]
+        tipo = fila["TIPO"]
 
         if tipo in {
             "numerica",
             "ordinal",
-            "temporal",
         }:
             base[columna] = pd.to_numeric(
                 base[columna],
@@ -2368,73 +2063,39 @@ def preparar_base_laboratorio(
     return base
 
 
-def construir_catalogo_disponible(
-    df: pd.DataFrame,
-) -> pd.DataFrame:
-    """
-    Construye un inventario de variables:
-    - disponibles con datos,
-    - existentes pero vacías,
-    - ausentes del archivo.
-    """
+def tipo_reducido(
+    tipo: str,
+) -> str:
+    """Reduce los tipos a numérico o categórico."""
 
-    filas = []
+    if tipo in {
+        "categorica",
+        "binaria",
+        "ordinal",
+    }:
+        return "categorica"
 
-    for nombre, especificacion in CATALOGO_VARIABLES.items():
-        columna = especificacion["columna"]
-
-        existe = columna in df.columns
-        con_datos = (
-            bool(df[columna].notna().any())
-            if existe
-            else False
-        )
-
-        filas.append(
-            {
-                "VARIABLE": nombre,
-                "COLUMNA": columna,
-                "FAMILIA": especificacion["familia"],
-                "TIPO": especificacion["tipo"],
-                "EXISTE": existe,
-                "CON_DATOS": con_datos,
-            }
-        )
-
-    return pd.DataFrame(filas)
+    return "numerica"
 
 
-def opciones_variables_por_familia(
-    inventario: pd.DataFrame,
-    incluir_identificadores: bool = False,
+def opciones_variable_principal(
+    catalogo: pd.DataFrame,
+    objetivo: str,
 ) -> list[str]:
-    """
-    Devuelve variables aptas para el laboratorio.
+    """Filtra las variables principales según el objetivo."""
 
-    Identidad y Año se excluyen porque:
-    - los nombres, apellidos, CVU e ID pertenecen al historial;
-    - Año se controla mediante la dimensión temporal.
-    """
-
-    disponibles = inventario.loc[
-        inventario["CON_DATOS"]
-        & inventario["FAMILIA"].ne(
-            "Identidad"
-        )
-        & inventario["TIPO"].ne(
-            "temporal"
-        )
-    ].copy()
-
-    if not incluir_identificadores:
-        disponibles = disponibles.loc[
-            disponibles["TIPO"].ne(
-                "identificador"
-            )
-        ]
+    tipos = OBJETIVOS_LABORATORIO[
+        objetivo
+    ]["tipos_principales"]
 
     return (
-        disponibles.sort_values(
+        catalogo.loc[
+            catalogo["DISPONIBLE"]
+            & catalogo["TIPO"].isin(
+                tipos
+            )
+        ]
+        .sort_values(
             [
                 "FAMILIA",
                 "VARIABLE",
@@ -2444,162 +2105,150 @@ def opciones_variables_por_familia(
     )
 
 
-def filtrar_escala_laboratorio(
-    df: pd.DataFrame,
-    escala: str,
-    seleccion: str | None,
-) -> pd.DataFrame:
-    """Aplica escala nacional, estatal o institucional."""
+def opciones_variable_secundaria(
+    catalogo: pd.DataFrame,
+    objetivo: str,
+    variable_principal: str,
+) -> list[str]:
+    """Devuelve variables secundarias compatibles con la principal."""
 
-    if escala == "Nacional":
-        return df
+    tipo_principal = VARIABLES_ANALITICAS[
+        variable_principal
+    ]["tipo"]
 
-    if escala == "Por estado":
-        columna = "ENTIDAD_FEDERATIVA_ANUAL"
-    else:
-        columna = "INSTITUCION_ANUAL"
-
-    if (
-        columna not in df.columns
-        or not df[columna].notna().any()
-        or seleccion is None
-    ):
-        return df.iloc[0:0].copy()
-
-    return df.loc[
-        df[columna].eq(seleccion)
-    ].copy()
-
-
-def recomendar_visualizaciones(
-    variables: list[str],
-    usa_tiempo: bool,
-) -> list[dict[str, object]]:
-    """Recomienda gráficas con reglas transparentes."""
-
-    tipos = [
-        CATALOGO_VARIABLES[variable]["tipo"]
-        for variable in variables
-    ]
-
-    tipos_analiticos = [
-        "categorica"
-        if tipo in {
-            "categorica",
-            "binaria",
-            "ordinal",
-        }
-        else tipo
-        for tipo in tipos
-    ]
-
-    n_cat = tipos_analiticos.count(
-        "categorica"
+    tipo_principal_reducido = tipo_reducido(
+        tipo_principal
     )
 
-    n_num = tipos_analiticos.count(
-        "numerica"
+    candidatas = catalogo.loc[
+        catalogo["DISPONIBLE"]
+        & catalogo["VARIABLE"].ne(
+            variable_principal
+        )
+    ].copy()
+
+    if objetivo == "Comparación":
+        if tipo_principal_reducido == "numerica":
+            candidatas = candidatas.loc[
+                candidatas["TIPO"].isin(
+                    [
+                        "categorica",
+                        "binaria",
+                        "ordinal",
+                    ]
+                )
+            ]
+        else:
+            candidatas = candidatas.loc[
+                candidatas["TIPO"].isin(
+                    [
+                        "categorica",
+                        "binaria",
+                        "ordinal",
+                    ]
+                )
+            ]
+
+    elif objetivo == "Relación":
+        if tipo_principal_reducido == "numerica":
+            candidatas = candidatas.loc[
+                candidatas["TIPO"].isin(
+                    [
+                        "numerica",
+                        "categorica",
+                        "binaria",
+                        "ordinal",
+                    ]
+                )
+            ]
+        else:
+            candidatas = candidatas.loc[
+                candidatas["TIPO"].eq(
+                    "numerica"
+                )
+            ]
+
+    elif objetivo == "Evolución temporal":
+        candidatas = candidatas.loc[
+            candidatas["TIPO"].isin(
+                [
+                    "categorica",
+                    "binaria",
+                    "ordinal",
+                ]
+            )
+        ]
+
+    else:
+        return []
+
+    return (
+        candidatas.sort_values(
+            [
+                "FAMILIA",
+                "VARIABLE",
+            ]
+        )["VARIABLE"]
+        .tolist()
+    )
+
+
+def recomendar_graficas_arbol(
+    objetivo: str,
+    variable_principal: str,
+    variable_secundaria: str | None,
+    usa_tiempo: bool,
+) -> list[dict[str, object]]:
+    """Recomienda gráficas y asigna una idoneidad."""
+
+    tipo_1 = tipo_reducido(
+        VARIABLES_ANALITICAS[
+            variable_principal
+        ]["tipo"]
+    )
+
+    tipo_2 = (
+        tipo_reducido(
+            VARIABLES_ANALITICAS[
+                variable_secundaria
+            ]["tipo"]
+        )
+        if variable_secundaria
+        else None
     )
 
     recomendaciones = []
 
     def agregar(
-        nombre: str,
-        score: int,
+        grafica: str,
+        porcentaje: int,
         razon: str,
     ) -> None:
         recomendaciones.append(
             {
-                "grafica": nombre,
-                "idoneidad": score,
+                "grafica": grafica,
+                "porcentaje": porcentaje,
                 "razon": razon,
             }
         )
 
-    if usa_tiempo:
-        if n_cat == 1 and n_num == 0:
-            agregar(
-                "Barras apiladas",
-                97,
-                "Muestra la composición anual de las categorías.",
-            )
-            agregar(
-                "Líneas múltiples",
-                89,
-                "Permite seguir la tendencia de cada categoría.",
-            )
-            agregar(
-                "Área apilada",
-                82,
-                "Destaca el crecimiento total y la composición.",
-            )
-
-        elif n_cat >= 2 and n_num == 0:
-            agregar(
-                "Mapa de calor",
-                94,
-                "Resume dos categorías a través del tiempo sin saturar barras.",
-            )
-            agregar(
-                "Barras apiladas",
-                88,
-                "Funciona cuando se limitan las categorías principales.",
-            )
-
-        elif n_num >= 1 and n_cat >= 1:
-            agregar(
-                "Boxplot por periodo",
-                95,
-                "Compara una distribución numérica por grupo y año.",
-            )
-            agregar(
-                "Líneas de mediana",
-                89,
-                "Resume la evolución de la tendencia central.",
-            )
-
-        elif n_num >= 1:
-            agregar(
-                "Línea temporal",
-                96,
-                "Representa la evolución anual de una variable numérica.",
-            )
-            agregar(
-                "Área",
-                78,
-                "Enfatiza la magnitud de la tendencia.",
-            )
-
-    else:
-        if n_cat == 1 and n_num == 0:
+    if objetivo == "Distribución":
+        if tipo_1 == "categorica":
             agregar(
                 "Dona",
                 96,
-                "Muestra la composición de una variable con pocas categorías.",
+                "Resume la composición de una variable categórica.",
             )
             agregar(
                 "Barras",
                 94,
-                "Compara con precisión el tamaño de las categorías.",
+                "Compara con mayor precisión el tamaño de las categorías.",
             )
-
-        elif n_cat >= 2 and n_num == 0:
-            agregar(
-                "Barras apiladas",
-                95,
-                "Compara la composición conjunta de dos variables categóricas.",
-            )
-            agregar(
-                "Mapa de calor",
-                91,
-                "Hace visibles concentraciones entre categorías.",
-            )
-
-        elif n_num == 1 and n_cat == 0:
+        else:
             agregar(
                 "Histograma",
                 98,
-                "Representa la distribución de una variable numérica.",
+                "Muestra la distribución de una variable numérica.",
             )
             agregar(
                 "Boxplot",
@@ -2607,40 +2256,122 @@ def recomendar_visualizaciones(
                 "Resume mediana, dispersión y valores atípicos.",
             )
 
-        elif n_num >= 1 and n_cat >= 1:
+    elif objetivo == "Comparación":
+        if tipo_1 == "numerica":
             agregar(
                 "Boxplot",
                 97,
-                "Compara una variable numérica entre categorías.",
+                "Compara una distribución numérica entre grupos.",
             )
             agregar(
                 "Violin plot",
                 89,
-                "Muestra la forma de la distribución por grupo.",
+                "Muestra la forma y densidad de cada grupo.",
+            )
+        else:
+            agregar(
+                "Barras apiladas",
+                96,
+                "Compara dos clasificaciones categóricas.",
             )
             agregar(
-                "Burbujas",
-                74,
-                "Resume categorías, valores y tamaño en tres dimensiones.",
+                "Mapa de calor",
+                92,
+                "Destaca concentraciones entre las categorías.",
             )
 
-        elif n_num >= 2:
+    elif objetivo == "Relación":
+        if (
+            tipo_1 == "numerica"
+            and tipo_2 == "numerica"
+        ):
             agregar(
                 "Dispersión",
-                97,
-                "Muestra la relación entre dos variables numéricas.",
+                98,
+                "Representa la relación entre dos variables numéricas.",
+            )
+        else:
+            agregar(
+                "Boxplot",
+                96,
+                "Relaciona una variable numérica con grupos categóricos.",
             )
             agregar(
-                "Burbujas",
-                87,
-                "Permite incorporar una tercera dimensión.",
+                "Violin plot",
+                88,
+                "Permite comparar densidades entre grupos.",
             )
 
-    return sorted(
-        recomendaciones,
-        key=lambda fila: fila["idoneidad"],
-        reverse=True,
-    )
+    elif objetivo == "Evolución temporal":
+        if tipo_1 == "categorica":
+            agregar(
+                "Barras apiladas",
+                97,
+                "Muestra la composición de las categorías por año.",
+            )
+            agregar(
+                "Líneas múltiples",
+                91,
+                "Permite seguir la tendencia de cada categoría.",
+            )
+            agregar(
+                "Área apilada",
+                84,
+                "Destaca el crecimiento y la composición total.",
+            )
+        else:
+            agregar(
+                "Línea temporal",
+                98,
+                "Muestra la evolución anual de la variable numérica.",
+            )
+
+    if usa_tiempo and objetivo != "Evolución temporal":
+        ajustadas = []
+
+        for item in recomendaciones:
+            if item["grafica"] in {
+                "Dona",
+                "Histograma",
+                "Boxplot",
+                "Violin plot",
+                "Dispersión",
+            }:
+                continue
+
+            ajustadas.append(
+                item
+            )
+
+        if ajustadas:
+            recomendaciones = ajustadas
+        else:
+            if tipo_1 == "categorica":
+                recomendaciones = [
+                    {
+                        "grafica": "Barras apiladas",
+                        "porcentaje": 96,
+                        "razon":
+                            "Permite comparar categorías a lo largo del tiempo.",
+                    },
+                    {
+                        "grafica": "Líneas múltiples",
+                        "porcentaje": 90,
+                        "razon":
+                            "Muestra la tendencia anual de cada categoría.",
+                    },
+                ]
+            else:
+                recomendaciones = [
+                    {
+                        "grafica": "Línea temporal",
+                        "porcentaje": 97,
+                        "razon":
+                            "Resume la evolución anual de la variable numérica.",
+                    }
+                ]
+
+    return recomendaciones
 
 
 def limitar_categorias(
@@ -2648,13 +2379,12 @@ def limitar_categorias(
     columna: str,
     maximo: int = 12,
 ) -> pd.DataFrame:
-    """Conserva categorías principales y agrupa el resto como Otros."""
-
-    if columna not in df.columns:
-        return df
+    """Agrupa las categorías menos frecuentes como OTROS."""
 
     conteos = (
-        df.groupby(columna)["ID_PERSONA_EXACTA"]
+        df.groupby(
+            columna
+        )["ID_PERSONA_EXACTA"]
         .nunique()
         .sort_values(
             ascending=False
@@ -2665,7 +2395,9 @@ def limitar_categorias(
         return df
 
     principales = set(
-        conteos.head(maximo).index
+        conteos.head(
+            maximo
+        ).index
     )
 
     salida = df.copy()
@@ -2680,28 +2412,57 @@ def limitar_categorias(
     return salida
 
 
-def construir_dataset_laboratorio(
+def construir_dataset_arbol(
     df: pd.DataFrame,
-    variables: list[str],
+    catalogo: pd.DataFrame,
+    variable_principal: str,
+    variable_secundaria: str | None,
     usa_tiempo: bool,
     periodo: tuple[int, int] | None,
     anio: int | None,
-) -> tuple[pd.DataFrame, list[str], list[str]]:
-    """Prepara el conjunto de análisis."""
+) -> tuple[
+    pd.DataFrame,
+    str,
+    str | None,
+    str,
+    str | None,
+]:
+    """Filtra el periodo y resuelve las columnas elegidas."""
 
-    columnas = [
-        CATALOGO_VARIABLES[variable]["columna"]
-        for variable in variables
+    mapa = dict(
+        zip(
+            catalogo["VARIABLE"],
+            catalogo["COLUMNA"],
+        )
+    )
+
+    columna_1 = mapa[
+        variable_principal
     ]
 
-    tipos = [
-        CATALOGO_VARIABLES[variable]["tipo"]
-        for variable in variables
-    ]
+    columna_2 = (
+        mapa[
+            variable_secundaria
+        ]
+        if variable_secundaria
+        else None
+    )
+
+    tipo_1 = VARIABLES_ANALITICAS[
+        variable_principal
+    ]["tipo"]
+
+    tipo_2 = (
+        VARIABLES_ANALITICAS[
+            variable_secundaria
+        ]["tipo"]
+        if variable_secundaria
+        else None
+    )
 
     base = df.copy()
 
-    if usa_tiempo and periodo is not None:
+    if usa_tiempo:
         base = base.loc[
             base["AÑO"].between(
                 periodo[0],
@@ -2709,119 +2470,110 @@ def construir_dataset_laboratorio(
                 inclusive="both",
             )
         ].copy()
-
-    elif not usa_tiempo and anio is not None:
+    else:
         base = base.loc[
             base["AÑO"].eq(
                 anio
             )
         ].copy()
 
-    columnas_presentes = [
-        columna
-        for columna in columnas
-        if columna in base.columns
+    columnas = [
+        "ID_PERSONA_EXACTA",
+        "AÑO",
+        columna_1,
     ]
+
+    if columna_2:
+        columnas.append(
+            columna_2
+        )
 
     base = base[
         list(
             dict.fromkeys(
-                [
-                    "ID_PERSONA_EXACTA",
-                    "AÑO",
-                    *columnas_presentes,
-                ]
+                columnas
             )
         )
-    ].copy()
-
-    base = base.dropna(
-        subset=columnas_presentes,
+    ].dropna(
+        subset=[
+            columna
+            for columna in [
+                columna_1,
+                columna_2,
+            ]
+            if columna is not None
+        ],
         how="any",
     )
 
-    for columna, tipo in zip(
-        columnas_presentes,
-        tipos,
-    ):
-        if tipo in {
-            "categorica",
-            "binaria",
-            "ordinal",
-        }:
-            base = limitar_categorias(
-                base,
-                columna,
-                maximo=12,
-            )
-
-    return (
-        base,
-        columnas_presentes,
-        tipos,
-    )
-
-
-def generar_figura_laboratorio(
-    base: pd.DataFrame,
-    variables: list[str],
-    columnas: list[str],
-    tipos: list[str],
-    usa_tiempo: bool,
-    grafica: str,
-) -> tuple[go.Figure, pd.DataFrame]:
-    """Genera la gráfica seleccionada."""
-
-    categoricas = [
-        (
-            nombre,
-            columna,
+    if tipo_1 in {
+        "categorica",
+        "binaria",
+        "ordinal",
+    }:
+        base = limitar_categorias(
+            base,
+            columna_1,
         )
-        for nombre, columna, tipo
-        in zip(
-            variables,
-            columnas,
-            tipos,
-        )
-        if tipo in {
+
+    if (
+        columna_2
+        and tipo_2 in {
             "categorica",
             "binaria",
             "ordinal",
         }
-    ]
+    ):
+        base = limitar_categorias(
+            base,
+            columna_2,
+        )
 
-    numericas = [
-        (
-            nombre,
-            columna,
-        )
-        for nombre, columna, tipo
-        in zip(
-            variables,
-            columnas,
-            tipos,
-        )
-        if tipo == "numerica"
-    ]
+    return (
+        base,
+        columna_1,
+        columna_2,
+        tipo_1,
+        tipo_2,
+    )
+
+
+def generar_figura_arbol(
+    base: pd.DataFrame,
+    variable_principal: str,
+    variable_secundaria: str | None,
+    columna_1: str,
+    columna_2: str | None,
+    tipo_1: str,
+    tipo_2: str | None,
+    grafica: str,
+    usa_tiempo: bool,
+) -> tuple[
+    go.Figure,
+    pd.DataFrame,
+]:
+    """Genera la gráfica seleccionada por el usuario."""
 
     if grafica == "Dona":
-        nombre, columna = categoricas[0]
-
-        resumen = (
-            base.groupby(columna)["ID_PERSONA_EXACTA"]
+        datos = (
+            base.groupby(
+                columna_1
+            )["ID_PERSONA_EXACTA"]
             .nunique()
             .rename("PERSONAS")
             .reset_index()
         )
 
         figura = px.pie(
-            resumen,
-            names=columna,
+            datos,
+            names=columna_1,
             values="PERSONAS",
             hole=0.58,
             labels={
-                columna: nombre,
-                "PERSONAS": "Personas",
+                columna_1:
+                    variable_principal,
+                "PERSONAS":
+                    "Personas",
             },
         )
 
@@ -2830,13 +2582,13 @@ def generar_figura_laboratorio(
             textinfo="percent+label",
         )
 
-        return figura, resumen
+        return figura, datos
 
     if grafica == "Barras":
-        nombre, columna = categoricas[0]
-
-        resumen = (
-            base.groupby(columna)["ID_PERSONA_EXACTA"]
+        datos = (
+            base.groupby(
+                columna_1
+            )["ID_PERSONA_EXACTA"]
             .nunique()
             .sort_values(
                 ascending=False
@@ -2846,85 +2598,42 @@ def generar_figura_laboratorio(
         )
 
         figura = px.bar(
-            resumen,
-            x=columna,
+            datos,
+            x=columna_1,
             y="PERSONAS",
             labels={
-                columna: nombre,
-                "PERSONAS": "Personas",
+                columna_1:
+                    variable_principal,
+                "PERSONAS":
+                    "Personas",
             },
         )
 
-        return figura, resumen
+        return figura, datos
 
     if grafica in {
         "Barras apiladas",
         "Líneas múltiples",
         "Área apilada",
     }:
-        nombre_color, columna_color = categoricas[0]
-
-        resumen = (
-            base.groupby(
-                [
-                    "AÑO",
-                    columna_color,
-                ]
-            )["ID_PERSONA_EXACTA"]
-            .nunique()
-            .rename("PERSONAS")
-            .reset_index()
+        color_columna = (
+            columna_2
+            if columna_2
+            else columna_1
         )
 
-        if grafica == "Barras apiladas":
-            figura = px.bar(
-                resumen,
-                x="AÑO",
-                y="PERSONAS",
-                color=columna_color,
-                barmode="stack",
-                labels={
-                    columna_color: nombre_color,
-                    "PERSONAS": "Personas",
-                },
-            )
+        color_nombre = (
+            variable_secundaria
+            if variable_secundaria
+            else variable_principal
+        )
 
-        elif grafica == "Líneas múltiples":
-            figura = px.line(
-                resumen,
-                x="AÑO",
-                y="PERSONAS",
-                color=columna_color,
-                markers=True,
-                labels={
-                    columna_color: nombre_color,
-                    "PERSONAS": "Personas",
-                },
-            )
-
-        else:
-            figura = px.area(
-                resumen,
-                x="AÑO",
-                y="PERSONAS",
-                color=columna_color,
-                labels={
-                    columna_color: nombre_color,
-                    "PERSONAS": "Personas",
-                },
-            )
-
-        return figura, resumen
-
-    if grafica == "Mapa de calor":
         if usa_tiempo:
-            nombre, columna = categoricas[0]
-
-            resumen = (
+            datos = (
                 base.groupby(
                     [
-                        columna,
                         "AÑO",
+                        color_columna,
                     ]
                 )["ID_PERSONA_EXACTA"]
                 .nunique()
@@ -2932,17 +2641,52 @@ def generar_figura_laboratorio(
                 .reset_index()
             )
 
-            matriz = resumen.pivot(
-                index=columna,
-                columns="AÑO",
-                values="PERSONAS",
-            ).fillna(0)
+            if grafica == "Barras apiladas":
+                figura = px.bar(
+                    datos,
+                    x="AÑO",
+                    y="PERSONAS",
+                    color=color_columna,
+                    barmode="stack",
+                    labels={
+                        color_columna:
+                            color_nombre,
+                        "PERSONAS":
+                            "Personas",
+                    },
+                )
+
+            elif grafica == "Líneas múltiples":
+                figura = px.line(
+                    datos,
+                    x="AÑO",
+                    y="PERSONAS",
+                    color=color_columna,
+                    markers=True,
+                    labels={
+                        color_columna:
+                            color_nombre,
+                        "PERSONAS":
+                            "Personas",
+                    },
+                )
+
+            else:
+                figura = px.area(
+                    datos,
+                    x="AÑO",
+                    y="PERSONAS",
+                    color=color_columna,
+                    labels={
+                        color_columna:
+                            color_nombre,
+                        "PERSONAS":
+                            "Personas",
+                    },
+                )
 
         else:
-            _, columna_1 = categoricas[0]
-            _, columna_2 = categoricas[1]
-
-            resumen = (
+            datos = (
                 base.groupby(
                     [
                         columna_1,
@@ -2954,7 +2698,64 @@ def generar_figura_laboratorio(
                 .reset_index()
             )
 
-            matriz = resumen.pivot(
+            figura = px.bar(
+                datos,
+                x=columna_1,
+                y="PERSONAS",
+                color=columna_2,
+                barmode="stack",
+                labels={
+                    columna_1:
+                        variable_principal,
+                    columna_2:
+                        variable_secundaria,
+                    "PERSONAS":
+                        "Personas",
+                },
+            )
+
+        return figura, datos
+
+    if grafica == "Mapa de calor":
+        if usa_tiempo:
+            categoria = (
+                columna_2
+                if columna_2
+                else columna_1
+            )
+
+            datos = (
+                base.groupby(
+                    [
+                        categoria,
+                        "AÑO",
+                    ]
+                )["ID_PERSONA_EXACTA"]
+                .nunique()
+                .rename("PERSONAS")
+                .reset_index()
+            )
+
+            matriz = datos.pivot(
+                index=categoria,
+                columns="AÑO",
+                values="PERSONAS",
+            ).fillna(0)
+
+        else:
+            datos = (
+                base.groupby(
+                    [
+                        columna_1,
+                        columna_2,
+                    ]
+                )["ID_PERSONA_EXACTA"]
+                .nunique()
+                .rename("PERSONAS")
+                .reset_index()
+            )
+
+            matriz = datos.pivot(
                 index=columna_1,
                 columns=columna_2,
                 values="PERSONAS",
@@ -2964,22 +2765,21 @@ def generar_figura_laboratorio(
             matriz,
             aspect="auto",
             labels={
-                "color": "Personas",
+                "color":
+                    "Personas",
             },
         )
 
-        return figura, resumen
+        return figura, datos
 
     if grafica == "Histograma":
-        nombre, columna = numericas[0]
-
         figura = px.histogram(
             base,
-            x=columna,
+            x=columna_1,
             nbins=30,
             labels={
-                columna: nombre,
-                "count": "Registros",
+                columna_1:
+                    variable_principal,
             },
         )
 
@@ -2987,296 +2787,367 @@ def generar_figura_laboratorio(
             figura,
             base[
                 [
-                    columna,
+                    columna_1,
                 ]
             ].copy(),
         )
 
     if grafica in {
         "Boxplot",
-        "Boxplot por periodo",
         "Violin plot",
     }:
-        nombre_num, columna_num = numericas[0]
+        if tipo_reducido(
+            tipo_1
+        ) == "numerica":
+            columna_numerica = columna_1
+            nombre_numerica = variable_principal
+            columna_categoria = columna_2
+            nombre_categoria = variable_secundaria
 
-        if categoricas:
-            nombre_cat, columna_cat = categoricas[0]
         else:
-            nombre_cat = "Año"
-            columna_cat = "AÑO"
-
-        color = (
-            categoricas[1][1]
-            if len(categoricas) >= 2
-            else None
-        )
+            columna_numerica = columna_2
+            nombre_numerica = variable_secundaria
+            columna_categoria = columna_1
+            nombre_categoria = variable_principal
 
         if grafica == "Violin plot":
             figura = px.violin(
                 base,
-                x=columna_cat,
-                y=columna_num,
-                color=color,
+                x=columna_categoria,
+                y=columna_numerica,
                 box=True,
                 points=False,
                 labels={
-                    columna_cat: nombre_cat,
-                    columna_num: nombre_num,
+                    columna_categoria:
+                        nombre_categoria,
+                    columna_numerica:
+                        nombre_numerica,
                 },
             )
-
         else:
             figura = px.box(
                 base,
-                x=columna_cat,
-                y=columna_num,
-                color=color,
+                x=columna_categoria,
+                y=columna_numerica,
                 points="outliers",
                 labels={
-                    columna_cat: nombre_cat,
-                    columna_num: nombre_num,
+                    columna_categoria:
+                        nombre_categoria,
+                    columna_numerica:
+                        nombre_numerica,
                 },
             )
 
-        columnas_salida = [
-            columna_cat,
-            columna_num,
-        ]
+        return figura, base.copy()
 
-        if color is not None:
-            columnas_salida.append(
-                color
-            )
-
-        return (
-            figura,
-            base[
-                columnas_salida
-            ].copy(),
-        )
-
-    if grafica in {
-        "Línea temporal",
-        "Líneas de mediana",
-        "Área",
-    }:
-        nombre_num, columna_num = numericas[0]
-
-        agrupadores = [
-            "AÑO",
-        ]
-
-        color = None
-
-        if categoricas:
-            color = categoricas[0][1]
-            agrupadores.append(
-                color
-            )
-
-        resumen = (
+    if grafica == "Línea temporal":
+        datos = (
             base.groupby(
-                agrupadores
-            )[columna_num]
+                "AÑO"
+            )[columna_1]
             .median()
             .rename("MEDIANA")
             .reset_index()
         )
 
-        if grafica == "Área":
-            figura = px.area(
-                resumen,
-                x="AÑO",
-                y="MEDIANA",
-                color=color,
-                labels={
-                    "MEDIANA":
-                        f"Mediana de {nombre_num}",
-                },
-            )
-        else:
-            figura = px.line(
-                resumen,
-                x="AÑO",
-                y="MEDIANA",
-                color=color,
-                markers=True,
-                labels={
-                    "MEDIANA":
-                        f"Mediana de {nombre_num}",
-                },
-            )
-
-        return figura, resumen
-
-    if grafica in {
-        "Dispersión",
-        "Burbujas",
-    }:
-        nombre_x, columna_x = numericas[0]
-        nombre_y, columna_y = numericas[1]
-
-        color = (
-            categoricas[0][1]
-            if categoricas
-            else None
-        )
-
-        columnas_salida = [
-            columna_x,
-            columna_y,
-        ]
-
-        if color is not None:
-            columnas_salida.append(
-                color
-            )
-
-        resumen = base[
-            columnas_salida
-        ].copy()
-
-        figura = px.scatter(
-            resumen,
-            x=columna_x,
-            y=columna_y,
-            color=color,
-            size=(
-                columna_y
-                if grafica == "Burbujas"
-                else None
-            ),
+        figura = px.line(
+            datos,
+            x="AÑO",
+            y="MEDIANA",
+            markers=True,
             labels={
-                columna_x: nombre_x,
-                columna_y: nombre_y,
+                "MEDIANA":
+                    f"Mediana de {variable_principal}",
             },
-            size_max=35,
         )
 
-        return figura, resumen
+        return figura, datos
+
+    if grafica == "Dispersión":
+        figura = px.scatter(
+            base,
+            x=columna_1,
+            y=columna_2,
+            labels={
+                columna_1:
+                    variable_principal,
+                columna_2:
+                    variable_secundaria,
+            },
+        )
+
+        return figura, base.copy()
 
     raise ValueError(
         f"La gráfica '{grafica}' todavía no está implementada."
     )
 
 
-def interpretar_laboratorio(
-    base: pd.DataFrame,
-    variables: list[str],
-    columnas: list[str],
-    tipos: list[str],
+def describir_grafica_arbol(
+    objetivo: str,
+    variable_principal: str,
+    variable_secundaria: str | None,
+    usa_tiempo: bool,
+    periodo: tuple[int, int] | None,
+    anio: int | None,
     escala: str,
-) -> tuple[str, str]:
-    """Genera descripción e interpretación breve."""
+    ubicacion: str,
+) -> str:
+    """Construye la descripción que aparece debajo del encabezado."""
 
-    descripcion = (
-        f"La gráfica resume los registros del SNII a escala "
-        f"{escala.lower()}, utilizando personas únicas como "
-        "unidad de conteo cuando la selección es categórica."
+    variables = (
+        f"{variable_principal} y {variable_secundaria}"
+        if variable_secundaria
+        else variable_principal
     )
 
-    categoricas = [
-        (
-            nombre,
-            columna,
+    if usa_tiempo:
+        referencia_tiempo = (
+            f"durante el periodo {periodo[0]}–{periodo[1]}"
         )
-        for nombre, columna, tipo
-        in zip(
-            variables,
-            columnas,
-            tipos,
+    else:
+        referencia_tiempo = (
+            f"en el año {anio}"
         )
-        if tipo in {
+
+    referencia_espacial = (
+        "a nivel nacional"
+        if escala == "Nacional"
+        else f"para {ubicacion}"
+    )
+
+    return (
+        f"Esta gráfica responde a un análisis de "
+        f"{objetivo.lower()} de {variables}, "
+        f"{referencia_tiempo}, {referencia_espacial}."
+    )
+
+
+def interpretar_tres_componentes(
+    base: pd.DataFrame,
+    columna_1: str,
+    columna_2: str | None,
+    tipo_1: str,
+    tipo_2: str | None,
+    usa_tiempo: bool,
+) -> str:
+    """
+    Genera un párrafo con:
+    1. tendencia general;
+    2. categoría o grupo superior;
+    3. comparación frente al inferior.
+    """
+
+    partes = []
+
+    # --------------------------------------------------------
+    # 1. TENDENCIA GENERAL
+    # --------------------------------------------------------
+
+    if usa_tiempo:
+        serie = (
+            base.groupby(
+                "AÑO"
+            )["ID_PERSONA_EXACTA"]
+            .nunique()
+            .sort_index()
+        )
+
+        if len(serie) >= 2:
+            inicial = float(
+                serie.iloc[0]
+            )
+            final = float(
+                serie.iloc[-1]
+            )
+
+            cambio = (
+                (final - inicial)
+                / inicial
+                * 100
+                if inicial > 0
+                else None
+            )
+
+            if cambio is None:
+                tendencia = (
+                    "no pudo determinarse con precisión"
+                )
+            elif cambio > 5:
+                tendencia = "creciente"
+            elif cambio < -5:
+                tendencia = "decreciente"
+            else:
+                tendencia = "relativamente estable"
+
+            partes.append(
+                f"La tendencia general fue {tendencia}"
+                + (
+                    f", con un cambio de {cambio:+.1f}% "
+                    "entre el primer y el último año"
+                    if cambio is not None
+                    else ""
+                )
+                + "."
+            )
+
+    else:
+        partes.append(
+            "El análisis corresponde a una fotografía descriptiva "
+            "del año seleccionado."
+        )
+
+    # --------------------------------------------------------
+    # 2 Y 3. SUPERIOR E INFERIOR
+    # --------------------------------------------------------
+
+    columna_categoria = None
+
+    if tipo_1 in {
+        "categorica",
+        "binaria",
+        "ordinal",
+    }:
+        columna_categoria = columna_1
+
+    elif (
+        columna_2 is not None
+        and tipo_2 in {
             "categorica",
             "binaria",
             "ordinal",
         }
-    ]
+    ):
+        columna_categoria = columna_2
 
-    numericas = [
-        (
-            nombre,
-            columna,
-        )
-        for nombre, columna, tipo
-        in zip(
-            variables,
-            columnas,
-            tipos,
-        )
-        if tipo == "numerica"
-    ]
-
-    if categoricas:
-        nombre, columna = categoricas[0]
-
+    if columna_categoria is not None:
         resumen = (
-            base.groupby(columna)["ID_PERSONA_EXACTA"]
+            base.loc[
+                ~base[
+                    columna_categoria
+                ]
+                .astype("string")
+                .str.upper()
+                .isin(
+                    [
+                        "SIN INFORMACIÓN",
+                        "SIN INFORMACION",
+                        "NO DETERMINADO",
+                        "OTROS",
+                        "<NA>",
+                    ]
+                )
+            ]
+            .groupby(
+                columna_categoria
+            )["ID_PERSONA_EXACTA"]
             .nunique()
             .sort_values(
                 ascending=False
             )
         )
 
-        if not resumen.empty:
-            principal = resumen.index[0]
-            cantidad = int(
+        if len(resumen) >= 2:
+            superior = resumen.index[0]
+            inferior = resumen.index[-1]
+
+            valor_superior = int(
                 resumen.iloc[0]
             )
-            total = int(
-                resumen.sum()
+            valor_inferior = int(
+                resumen.iloc[-1]
             )
+
+            diferencia = (
+                valor_superior
+                - valor_inferior
+            )
+
             porcentaje = (
-                cantidad / total * 100
-                if total
-                else 0
+                diferencia
+                / valor_inferior
+                * 100
+                if valor_inferior > 0
+                else None
             )
 
-            interpretacion = (
-                f"En {nombre.lower()}, la categoría con mayor "
-                f"representación es '{principal}', con "
-                f"{cantidad:,} personas ({porcentaje:.1f}% del "
-                "total clasificado en la selección)."
+            partes.append(
+                f"La categoría numéricamente superior fue "
+                f"'{superior}', con {valor_superior:,} personas."
             )
 
-            return (
-                descripcion,
-                interpretacion,
+            comparacion = (
+                f"Superó a '{inferior}', que registró "
+                f"{valor_inferior:,}, por {diferencia:,} personas"
             )
 
-    if numericas:
-        nombre, columna = numericas[0]
+            if porcentaje is not None:
+                comparacion += (
+                    f", equivalente a {porcentaje:.1f}% "
+                    "más respecto de la categoría inferior"
+                )
 
-        valores = base[
-            columna
-        ].dropna()
-
-        if not valores.empty:
-            interpretacion = (
-                f"La mediana de {nombre.lower()} es "
-                f"{valores.median():.1f}. El 50% central de "
-                f"los registros se encuentra entre "
-                f"{valores.quantile(0.25):.1f} y "
-                f"{valores.quantile(0.75):.1f}."
+            partes.append(
+                comparacion + "."
             )
 
-            return (
-                descripcion,
-                interpretacion,
+        elif len(resumen) == 1:
+            categoria = resumen.index[0]
+            valor = int(
+                resumen.iloc[0]
             )
 
-    return (
-        descripcion,
-        "La selección permite identificar patrones descriptivos. "
-        "Los resultados deben interpretarse considerando la "
-        "cobertura y completitud de la fuente.",
+            partes.append(
+                f"La única categoría con información válida fue "
+                f"'{categoria}', con {valor:,} personas."
+            )
+
+    else:
+        columna_numerica = (
+            columna_1
+            if tipo_1 == "numerica"
+            else columna_2
+        )
+
+        if columna_numerica is not None:
+            valores = base[
+                columna_numerica
+            ].dropna()
+
+            if not valores.empty:
+                partes.append(
+                    f"El valor mediano fue {valores.median():.1f}; "
+                    f"el 50% central se ubicó entre "
+                    f"{valores.quantile(0.25):.1f} y "
+                    f"{valores.quantile(0.75):.1f}."
+                )
+
+    return " ".join(
+        partes
+    )
+
+
+def mostrar_nodo_completado(
+    numero: int,
+    titulo: str,
+    valor: str,
+) -> None:
+    """Muestra un resumen compacto de un nodo ya resuelto."""
+
+    st.markdown(
+        (
+            '<div class="snii-note">'
+            f'<strong>✓ {numero}. {titulo}:</strong> {valor}'
+            '</div>'
+        ),
+        unsafe_allow_html=True,
     )
 
 
 def render_laboratorio_visualizacion(
     df: pd.DataFrame,
 ) -> None:
-    """Constructor guiado de análisis y visualizaciones."""
+    """Árbol de decisión progresivo para construir visualizaciones."""
 
     st.header(
         "4. Laboratorio de visualización"
@@ -3284,414 +3155,228 @@ def render_laboratorio_visualizacion(
 
     st.markdown(
         '<p class="snii-subtitle">'
-        "Construye una pregunta con las variables procesadas "
-        "en el master y recibe una recomendación gráfica."
+        "Construye tu análisis paso a paso. Cada decisión habilita "
+        "el siguiente nodo del árbol."
         "</p>",
         unsafe_allow_html=True,
     )
 
-    base = preparar_base_laboratorio(
+    catalogo = catalogo_analitico_disponible(
         df
     )
 
-    inventario = construir_catalogo_disponible(
-        base
+    base = preparar_base_laboratorio(
+        df,
+        catalogo,
     )
 
-    variables_disponibles = (
-        opciones_variables_por_familia(
-            inventario,
-            incluir_identificadores=False,
+    disponibles = catalogo.loc[
+        catalogo["DISPONIBLE"]
+    ].copy()
+
+    if disponibles.empty:
+        st.warning(
+            "No se encontraron variables analíticas disponibles."
         )
+        return
+
+    st.info(
+        "Los nombres, apellidos, CVU, Nobilis e identificadores "
+        "se consultan únicamente en Historial del investigador."
     )
 
-    st.markdown(
-        """
-        <span class="lab-chip lab-objetivo">Objetivo</span>
-        <span class="lab-chip lab-variable">Variable</span>
-        <span class="lab-chip lab-tiempo">Tiempo</span>
-        <span class="lab-chip lab-filtro">Filtro</span>
-        <span class="lab-chip lab-ubicacion">Escala geográfica</span>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    with st.expander(
-        "Inventario de variables procesadas"
-    ):
-        inventario_mostrar = inventario.copy()
-
-        inventario_mostrar[
-            "ESTADO"
-        ] = np.select(
-            [
-                inventario_mostrar["FAMILIA"].eq(
-                    "Identidad"
-                ),
-                inventario_mostrar["TIPO"].eq(
-                    "temporal"
-                ),
-                inventario_mostrar["CON_DATOS"],
-                inventario_mostrar["EXISTE"],
-            ],
-            [
-                "Uso exclusivo en Historial del investigador",
-                "Se utiliza como dimensión temporal",
-                "Disponible en el laboratorio",
-                "Existe, pero está vacía",
-            ],
-            default="No está en el archivo",
-        )
-
-        st.dataframe(
-            inventario_mostrar[
-                [
-                    "FAMILIA",
-                    "VARIABLE",
-                    "COLUMNA",
-                    "TIPO",
-                    "ESTADO",
-                ]
-            ],
-            width="stretch",
-            hide_index=True,
-        )
-
-    # --------------------------------------------------------
-    # ESCALA GEOGRÁFICA
-    # --------------------------------------------------------
+    # ========================================================
+    # NODO 1. OBJETIVO
+    # ========================================================
 
     st.subheader(
-        "Construye tu propuesta"
+        "1. ¿Qué deseas analizar?"
     )
 
-    escala_columnas = st.columns(
-        [
-            1,
-            2,
-        ]
+    objetivo = st.radio(
+        "Objetivo del análisis",
+        list(
+            OBJETIVOS_LABORATORIO.keys()
+        ),
+        horizontal=True,
+        key="arbol_objetivo",
     )
 
-    with escala_columnas[0]:
-        st.markdown(
-            '<span class="lab-chip lab-ubicacion">Escala</span>',
-            unsafe_allow_html=True,
-        )
-
-        escala = st.selectbox(
-            "Escala del análisis",
-            [
-                "Nacional",
-                "Por estado",
-                "Por institución o centro",
-            ],
-            label_visibility="collapsed",
-            key="lab_escala",
-        )
-
-    seleccion_ubicacion = None
-
-    with escala_columnas[1]:
-        if escala == "Por estado":
-            columna_ubicacion = (
-                "ENTIDAD_FEDERATIVA_ANUAL"
-            )
-
-            opciones_ubicacion = (
-                sorted(
-                    base[
-                        columna_ubicacion
-                    ]
-                    .dropna()
-                    .astype(str)
-                    .unique()
-                    .tolist()
-                )
-                if (
-                    columna_ubicacion
-                    in base.columns
-                )
-                else []
-            )
-
-            st.markdown(
-                '<span class="lab-chip lab-ubicacion">Estado</span>',
-                unsafe_allow_html=True,
-            )
-
-            if not opciones_ubicacion:
-                st.warning(
-                    "La columna de entidad federativa existe, "
-                    "pero todavía no contiene datos recuperados."
-                )
-                return
-
-            seleccion_ubicacion = st.selectbox(
-                "Estado",
-                opciones_ubicacion,
-                label_visibility="collapsed",
-                key="lab_estado",
-            )
-
-        elif escala == "Por institución o centro":
-            columna_ubicacion = (
-                "INSTITUCION_ANUAL"
-            )
-
-            opciones_ubicacion = (
-                sorted(
-                    base[
-                        columna_ubicacion
-                    ]
-                    .dropna()
-                    .astype(str)
-                    .unique()
-                    .tolist()
-                )
-                if (
-                    columna_ubicacion
-                    in base.columns
-                )
-                else []
-            )
-
-            st.markdown(
-                '<span class="lab-chip lab-ubicacion">'
-                'Universidad o centro de investigación'
-                '</span>',
-                unsafe_allow_html=True,
-            )
-
-            if not opciones_ubicacion:
-                st.warning(
-                    "La columna de institución existe, pero "
-                    "todavía no contiene datos recuperados."
-                )
-                return
-
-            seleccion_ubicacion = st.selectbox(
-                "Institución",
-                opciones_ubicacion,
-                label_visibility="collapsed",
-                key="lab_institucion",
-            )
-
-        else:
-            st.markdown(
-                '<span class="lab-chip lab-ubicacion">'
-                'Estados Unidos Mexicanos'
-                '</span>',
-                unsafe_allow_html=True,
-            )
-
-    base_escala = filtrar_escala_laboratorio(
-        base,
-        escala,
-        seleccion_ubicacion,
+    st.caption(
+        OBJETIVOS_LABORATORIO[
+            objetivo
+        ]["descripcion"]
     )
 
-    # --------------------------------------------------------
-    # OBJETIVO Y TIEMPO
-    # --------------------------------------------------------
-
-    fila_objetivo = st.columns(
-        [
-            1.6,
-            1,
-        ]
+    mostrar_nodo_completado(
+        1,
+        "Objetivo",
+        objetivo,
     )
 
-    with fila_objetivo[0]:
-        st.markdown(
-            '<span class="lab-chip lab-objetivo">Quiero analizar</span>',
-            unsafe_allow_html=True,
-        )
+    # ========================================================
+    # NODO 2. VARIABLE PRINCIPAL
+    # ========================================================
 
-        objetivo = st.selectbox(
-            "Objetivo",
-            [
-                "la distribución de",
-                "la evolución de",
-                "la relación entre",
-                "la comparación de",
-            ],
-            label_visibility="collapsed",
-            key="lab_objetivo",
-        )
+    st.subheader(
+        "2. Selecciona la variable principal"
+    )
 
-    with fila_objetivo[1]:
-        st.markdown(
-            '<span class="lab-chip lab-tiempo">Tiempo</span>',
-            unsafe_allow_html=True,
-        )
+    opciones_principales = opciones_variable_principal(
+        catalogo,
+        objetivo,
+    )
 
-        usa_tiempo = st.toggle(
-            "Que dependa del tiempo",
-            value=(
-                objetivo == "la evolución de"
-            ),
-            key="lab_tiempo",
-        )
-
-    # --------------------------------------------------------
-    # VARIABLES POR FAMILIA
-    # --------------------------------------------------------
-
-    if not variables_disponibles:
+    if not opciones_principales:
         st.warning(
-            "No existen variables con datos disponibles."
+            "No hay variables compatibles con el objetivo seleccionado."
         )
         return
 
     familias = sorted(
-        inventario.loc[
-            inventario["CON_DATOS"]
-            & inventario["TIPO"].ne(
-                "identificador"
-            )
-            & inventario["TIPO"].ne(
-                "temporal"
-            )
-            & inventario["FAMILIA"].ne(
-                "Identidad"
-            ),
-            "FAMILIA",
-        ]
-        .dropna()
-        .unique()
-        .tolist()
+        {
+            VARIABLES_ANALITICAS[
+                variable
+            ]["familia"]
+            for variable in opciones_principales
+        }
     )
 
     familia = st.selectbox(
-        "Familia de la variable principal",
+        "Tema principal",
         familias,
-        key="lab_familia_1",
+        key="arbol_familia",
     )
 
-    opciones_familia = (
-        inventario.loc[
-            inventario["CON_DATOS"]
-            & inventario["FAMILIA"].eq(
-                familia
-            )
-            & inventario["TIPO"].ne(
-                "identificador"
-            )
-            & inventario["TIPO"].ne(
-                "temporal"
-            )
-            & inventario["FAMILIA"].ne(
-                "Identidad"
-            ),
-            "VARIABLE",
-        ]
-        .sort_values()
-        .tolist()
-    )
-
-    st.caption(
-        "Las variables de identidad —nombre, apellidos, CVU e ID— "
-        "se consultan exclusivamente en el módulo Historial del "
-        "investigador. Año se controla desde la opción de tiempo."
-    )
-
-    columnas_variables = st.columns(3)
-
-    with columnas_variables[0]:
-        st.markdown(
-            '<span class="lab-chip lab-variable">Variable principal</span>',
-            unsafe_allow_html=True,
-        )
-
-        variable_1 = st.selectbox(
-            "Variable principal",
-            opciones_familia,
-            label_visibility="collapsed",
-            key="lab_variable_1",
-        )
-
-    opciones_restantes = (
-        variables_compatibles_con_seleccion(
-            inventario,
-            [
-                variable_1,
-            ],
-        )
-    )
-
-    with columnas_variables[1]:
-        st.markdown(
-            '<span class="lab-chip lab-variable">'
-            'Variable secundaria compatible'
-            '</span>',
-            unsafe_allow_html=True,
-        )
-
-        variable_2 = st.selectbox(
-            "Variable secundaria",
-            [
-                "Ninguna",
-                *opciones_restantes,
-            ],
-            label_visibility="collapsed",
-            key="lab_variable_2",
-            help=(
-                "Las opciones se filtran según la naturaleza "
-                "de la variable principal."
-            ),
-        )
-
-    seleccionadas = [
-        variable_1,
+    variables_familia = [
+        variable
+        for variable in opciones_principales
+        if VARIABLES_ANALITICAS[
+            variable
+        ]["familia"] == familia
     ]
 
-    if variable_2 != "Ninguna":
-        seleccionadas.append(
-            variable_2
-        )
-
-    opciones_tercera = (
-        variables_compatibles_con_seleccion(
-            inventario,
-            seleccionadas,
-        )
+    variable_principal = st.selectbox(
+        "Variable principal",
+        variables_familia,
+        key="arbol_variable_principal",
     )
 
-    with columnas_variables[2]:
-        st.markdown(
-            '<span class="lab-chip lab-variable">'
-            'Tercera variable compatible'
-            '</span>',
-            unsafe_allow_html=True,
+    mostrar_nodo_completado(
+        2,
+        "Variable principal",
+        variable_principal,
+    )
+
+    # ========================================================
+    # NODO 3. VARIABLE SECUNDARIA
+    # ========================================================
+
+    requiere_secundaria = (
+        OBJETIVOS_LABORATORIO[
+            objetivo
+        ]["requiere_secundaria"]
+    )
+
+    permite_secundaria = (
+        OBJETIVOS_LABORATORIO[
+            objetivo
+        ]["permite_secundaria"]
+    )
+
+    variable_secundaria = None
+
+    if requiere_secundaria or permite_secundaria:
+        st.subheader(
+            "3. Selecciona la variable de comparación"
         )
 
-        variable_3 = st.selectbox(
-            "Tercera variable",
-            [
-                "Ninguna",
-                *opciones_tercera,
-            ],
-            label_visibility="collapsed",
-            key="lab_variable_3",
-            help=(
-                "Sólo se muestran combinaciones que pueden "
-                "representarse con claridad."
+        opciones_secundarias = opciones_variable_secundaria(
+            catalogo,
+            objetivo,
+            variable_principal,
+        )
+
+        if requiere_secundaria:
+            if not opciones_secundarias:
+                st.warning(
+                    "No hay una segunda variable compatible."
+                )
+                return
+
+            variable_secundaria = st.selectbox(
+                "Variable secundaria",
+                opciones_secundarias,
+                key="arbol_variable_secundaria",
+            )
+
+        else:
+            variable_secundaria = st.selectbox(
+                "Variable secundaria opcional",
+                [
+                    "Ninguna",
+                    *opciones_secundarias,
+                ],
+                key="arbol_variable_secundaria_opcional",
+            )
+
+            if variable_secundaria == "Ninguna":
+                variable_secundaria = None
+
+        mostrar_nodo_completado(
+            3,
+            "Variable de comparación",
+            (
+                variable_secundaria
+                if variable_secundaria
+                else "No aplica"
             ),
         )
 
-    if variable_3 != "Ninguna":
-        seleccionadas.append(
-            variable_3
+        numero_tiempo = 4
+
+    else:
+        numero_tiempo = 3
+
+    # ========================================================
+    # NODO TIEMPO
+    # ========================================================
+
+    st.subheader(
+        f"{numero_tiempo}. Define la dimensión temporal"
+    )
+
+    tiempo_obligatorio = (
+        OBJETIVOS_LABORATORIO[
+            objetivo
+        ]["tiempo_obligatorio"]
+    )
+
+    if tiempo_obligatorio:
+        usa_tiempo = True
+
+        st.info(
+            "El objetivo Evolución temporal requiere utilizar un periodo."
+        )
+    else:
+        modo_tiempo = st.radio(
+            "¿Cómo deseas considerar el tiempo?",
+            [
+                "Un año específico",
+                "Un periodo",
+                "Toda la serie histórica",
+            ],
+            horizontal=True,
+            key="arbol_modo_tiempo",
         )
 
-    # --------------------------------------------------------
-    # PERIODO
-    # --------------------------------------------------------
+        usa_tiempo = (
+            modo_tiempo
+            != "Un año específico"
+        )
 
-    años_disponibles = sorted(
-        base_escala[
-            "AÑO"
-        ]
+    años = sorted(
+        base["AÑO"]
         .dropna()
         .astype(int)
         .unique()
@@ -3699,177 +3384,291 @@ def render_laboratorio_visualizacion(
     )
 
     if usa_tiempo:
-        periodo = st.slider(
-            "Periodo",
-            min_value=min(
-                años_disponibles
-            ),
-            max_value=max(
-                años_disponibles
-            ),
-            value=(
+        if (
+            not tiempo_obligatorio
+            and modo_tiempo
+            == "Toda la serie histórica"
+        ):
+            periodo = (
                 min(
-                    años_disponibles
+                    años
                 ),
                 max(
-                    años_disponibles
+                    años
                 ),
-            ),
-            key="lab_periodo",
-        )
+            )
+
+            st.write(
+                f"Periodo seleccionado: {periodo[0]}–{periodo[1]}"
+            )
+
+        else:
+            periodo = st.slider(
+                "Periodo",
+                min_value=min(
+                    años
+                ),
+                max_value=max(
+                    años
+                ),
+                value=(
+                    min(
+                        años
+                    ),
+                    max(
+                        años
+                    ),
+                ),
+                key="arbol_periodo",
+            )
 
         anio = None
-
-        texto_tiempo = (
-            f'<span class="lab-chip lab-tiempo">'
-            f'{periodo[0]}–{periodo[1]}</span>'
-        )
-
-        frase_tiempo = (
-            "y observar cómo cambia durante"
+        valor_tiempo = (
+            f"{periodo[0]}–{periodo[1]}"
         )
 
     else:
         anio = st.selectbox(
             "Año de referencia",
-            años_disponibles,
+            años,
             index=len(
-                años_disponibles
+                años
             ) - 1,
-            key="lab_anio",
+            key="arbol_anio",
         )
 
         periodo = None
-
-        texto_tiempo = (
-            f'<span class="lab-chip lab-tiempo">'
-            f'{anio}</span>'
+        valor_tiempo = str(
+            anio
         )
 
-        frase_tiempo = (
-            "en el año"
-        )
-
-    variables_html = " y ".join(
-        [
-            (
-                '<span class="lab-chip lab-variable">'
-                f'{variable}'
-                '</span>'
-            )
-            for variable in seleccionadas
-        ]
+    mostrar_nodo_completado(
+        numero_tiempo,
+        "Tiempo",
+        valor_tiempo,
     )
 
-    ubicacion_texto = (
-        seleccion_ubicacion
-        if seleccion_ubicacion is not None
-        else "México"
+    # ========================================================
+    # NODO UBICACIÓN
+    # ========================================================
+
+    numero_ubicacion = (
+        numero_tiempo
+        + 1
+    )
+
+    st.subheader(
+        f"{numero_ubicacion}. Selecciona el alcance"
+    )
+
+    escala = st.radio(
+        "Alcance geográfico o institucional",
+        [
+            "Nacional",
+            "Por estado",
+            "Por institución o centro",
+        ],
+        horizontal=True,
+        key="arbol_escala",
+    )
+
+    ubicacion = "México"
+    base_escala = base
+
+    if escala == "Por estado":
+        columna_estado = resolver_columna_analitica(
+            base,
+            "Entidad federativa",
+        )
+
+        if columna_estado is None:
+            st.warning(
+                "La entidad federativa todavía no tiene datos "
+                "recuperados en el master."
+            )
+            return
+
+        opciones_estado = sorted(
+            base[
+                columna_estado
+            ]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+        ubicacion = st.selectbox(
+            "Estado",
+            opciones_estado,
+            key="arbol_estado",
+        )
+
+        base_escala = base.loc[
+            base[
+                columna_estado
+            ].eq(
+                ubicacion
+            )
+        ].copy()
+
+    elif escala == "Por institución o centro":
+        columna_institucion = resolver_columna_analitica(
+            base,
+            "Institución",
+        )
+
+        if columna_institucion is None:
+            st.warning(
+                "La institución todavía no tiene datos "
+                "recuperados en el master."
+            )
+            return
+
+        opciones_institucion = sorted(
+            base[
+                columna_institucion
+            ]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+        ubicacion = st.selectbox(
+            "Institución o centro",
+            opciones_institucion,
+            key="arbol_institucion",
+        )
+
+        base_escala = base.loc[
+            base[
+                columna_institucion
+            ].eq(
+                ubicacion
+            )
+        ].copy()
+
+    mostrar_nodo_completado(
+        numero_ubicacion,
+        "Alcance",
+        ubicacion,
+    )
+
+    # ========================================================
+    # PREGUNTA CONSTRUIDA
+    # ========================================================
+
+    variables_texto = (
+        f"{variable_principal} respecto a {variable_secundaria}"
+        if variable_secundaria
+        else variable_principal
+    )
+
+    tiempo_texto = (
+        f"durante {periodo[0]}–{periodo[1]}"
+        if usa_tiempo
+        else f"en {anio}"
     )
 
     st.markdown(
         (
             '<div class="lab-sentence">'
-            'Me gustaría analizar '
-            f'<span class="lab-chip lab-objetivo">{objetivo}</span> '
-            f'{variables_html} '
-            f'{frase_tiempo} {texto_tiempo}, '
-            'a escala '
-            f'<span class="lab-chip lab-ubicacion">'
-            f'{ubicacion_texto}'
-            '</span>.'
+            '<strong>Pregunta construida:</strong><br>'
+            f'¿Cómo se comporta {variables_texto}, '
+            f'{tiempo_texto}, para {ubicacion}?'
             '</div>'
         ),
         unsafe_allow_html=True,
     )
 
-    # --------------------------------------------------------
-    # RECOMENDACIÓN
-    # --------------------------------------------------------
+    # ========================================================
+    # RECOMENDACIÓN DE GRÁFICA
+    # ========================================================
 
-    recomendaciones = recomendar_visualizaciones(
-        seleccionadas,
+    numero_grafica = (
+        numero_ubicacion
+        + 1
+    )
+
+    st.subheader(
+        f"{numero_grafica}. Selecciona el tipo de gráfica"
+    )
+
+    recomendaciones = recomendar_graficas_arbol(
+        objetivo,
+        variable_principal,
+        variable_secundaria,
         usa_tiempo,
     )
 
     if not recomendaciones:
         st.warning(
-            "La combinación seleccionada requiere otro "
-            "tipo de tratamiento antes de graficarse."
+            "No se encontró una visualización adecuada."
         )
         return
 
-    st.subheader(
-        "Recomendación del sistema"
-    )
-
-    tarjetas = st.columns(
-        min(
-            3,
-            len(
-                recomendaciones
-            ),
+    etiquetas_grafica = [
+        (
+            f"{item['grafica']} "
+            f"({item['porcentaje']}%)"
         )
-    )
-
-    for indice, recomendacion in enumerate(
-        recomendaciones[:3]
-    ):
-        with tarjetas[indice]:
-            st.markdown(
-                f"**{recomendacion['grafica']}**"
-            )
-
-            st.markdown(
-                (
-                    '<div class="lab-score">'
-                    f"{recomendacion['idoneidad']}%"
-                    '</div>'
-                ),
-                unsafe_allow_html=True,
-            )
-
-            st.progress(
-                recomendacion[
-                    "idoneidad"
-                ] / 100
-            )
-
-            st.caption(
-                recomendacion[
-                    "razon"
-                ]
-            )
-
-    opciones_grafica = [
-        recomendacion["grafica"]
-        for recomendacion in recomendaciones
-        if recomendacion["idoneidad"] >= 50
+        for item in recomendaciones
+        if item["porcentaje"] >= 50
     ]
 
-    tipo_grafica = st.radio(
-        "Tipo de gráfica",
-        opciones_grafica,
+    grafica_seleccionada_etiqueta = st.radio(
+        "Gráficas recomendadas",
+        etiquetas_grafica,
         horizontal=True,
-        key="lab_grafica",
+        key="arbol_tipo_grafica",
     )
 
+    grafica_seleccionada = (
+        grafica_seleccionada_etiqueta
+        .rsplit(
+            " (",
+            1,
+        )[0]
+    )
+
+    recomendacion_actual = next(
+        item
+        for item in recomendaciones
+        if item["grafica"]
+        == grafica_seleccionada
+    )
+
+    st.caption(
+        recomendacion_actual[
+            "razon"
+        ]
+    )
+
+    # ========================================================
+    # GENERACIÓN
+    # ========================================================
+
     if not st.button(
-        "Generar visualización",
+        "Generar gráfica",
         type="primary",
         width="stretch",
-        key="lab_generar",
+        key="arbol_generar",
     ):
         return
 
     try:
         (
             base_analisis,
-            columnas,
-            tipos,
-        ) = construir_dataset_laboratorio(
+            columna_1,
+            columna_2,
+            tipo_1,
+            tipo_2,
+        ) = construir_dataset_arbol(
             base_escala,
-            seleccionadas,
+            catalogo,
+            variable_principal,
+            variable_secundaria,
             usa_tiempo,
             periodo,
             anio,
@@ -3877,22 +3676,47 @@ def render_laboratorio_visualizacion(
 
         if base_analisis.empty:
             st.warning(
-                "No existen registros completos para la "
-                "combinación seleccionada."
+                "No existen registros completos para esta selección."
             )
             return
 
-        figura, datos = generar_figura_laboratorio(
+        figura, datos = generar_figura_arbol(
             base_analisis,
-            seleccionadas,
-            columnas,
-            tipos,
+            variable_principal,
+            variable_secundaria,
+            columna_1,
+            columna_2,
+            tipo_1,
+            tipo_2,
+            grafica_seleccionada,
             usa_tiempo,
-            tipo_grafica,
+        )
+
+        titulo = (
+            f"{objetivo}: {variables_texto}"
+        )
+
+        st.header(
+            titulo
+        )
+
+        descripcion = describir_grafica_arbol(
+            objetivo,
+            variable_principal,
+            variable_secundaria,
+            usa_tiempo,
+            periodo,
+            anio,
+            escala,
+            ubicacion,
+        )
+
+        st.markdown(
+            f"*{descripcion}*"
         )
 
         figura.update_layout(
-            height=540,
+            height=550,
             margin=dict(
                 l=20,
                 r=20,
@@ -3909,36 +3733,25 @@ def render_laboratorio_visualizacion(
         st.plotly_chart(
             figura,
             width="stretch",
-            key="lab_resultado",
+            key="arbol_resultado",
         )
 
-        descripcion, interpretacion = (
-            interpretar_laboratorio(
-                base_analisis,
-                seleccionadas,
-                columnas,
-                tipos,
-                escala,
-            )
+        interpretacion = interpretar_tres_componentes(
+            base_analisis,
+            columna_1,
+            columna_2,
+            tipo_1,
+            tipo_2,
+            usa_tiempo,
         )
 
-        izquierda, derecha = st.columns(2)
+        st.subheader(
+            "Interpretación automática"
+        )
 
-        with izquierda:
-            st.subheader(
-                "Descripción de la gráfica"
-            )
-            st.write(
-                descripcion
-            )
-
-        with derecha:
-            st.subheader(
-                "Interpretación automática"
-            )
-            st.write(
-                interpretacion
-            )
+        st.write(
+            interpretacion
+        )
 
         if (
             usa_tiempo
@@ -3961,7 +3774,7 @@ def render_laboratorio_visualizacion(
 
     except Exception as error:
         st.error(
-            "No fue posible generar la visualización: "
+            "No fue posible generar la gráfica: "
             f"{error}"
         )
 
