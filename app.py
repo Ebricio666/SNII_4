@@ -410,6 +410,334 @@ def serie_personas_anual(
         .reset_index()
     )
 
+@st.cache_data(show_spinner=False)
+def calcular_movimientos_anuales(
+    df: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Clasifica cada registro persona-año como:
+    - NUEVO INGRESO
+    - PERMANENCIA
+    - REINGRESO
+
+    También calcula las salidas observadas entre años consecutivos.
+    """
+
+    base = (
+        df[
+            [
+                "ID_PERSONA_EXACTA",
+                "AÑO",
+            ]
+        ]
+        .dropna()
+        .drop_duplicates()
+        .sort_values(
+            [
+                "ID_PERSONA_EXACTA",
+                "AÑO",
+            ]
+        )
+        .copy()
+    )
+
+    base["AÑO"] = (
+        pd.to_numeric(
+            base["AÑO"],
+            errors="coerce",
+        )
+        .astype("Int64")
+    )
+
+    base = base.loc[
+        base["AÑO"].between(
+            2000,
+            2025,
+            inclusive="both",
+        )
+    ].copy()
+
+    # Primer año observado de cada persona.
+    base["PRIMER_AÑO_OBSERVADO"] = (
+        base.groupby(
+            "ID_PERSONA_EXACTA"
+        )["AÑO"]
+        .transform("min")
+    )
+
+    # Año anterior observado para la misma persona.
+    base["AÑO_ANTERIOR_OBSERVADO"] = (
+        base.groupby(
+            "ID_PERSONA_EXACTA"
+        )["AÑO"]
+        .shift()
+    )
+
+    es_nuevo = (
+        base["AÑO"]
+        .eq(
+            base["PRIMER_AÑO_OBSERVADO"]
+        )
+    )
+
+    es_permanencia = (
+        base["AÑO_ANTERIOR_OBSERVADO"]
+        .notna()
+        & base["AÑO"].eq(
+            base[
+                "AÑO_ANTERIOR_OBSERVADO"
+            ]
+            + 1
+        )
+    )
+
+    base["TIPO_MOVIMIENTO"] = np.select(
+        [
+            es_nuevo,
+            es_permanencia,
+        ],
+        [
+            "Nuevo ingreso",
+            "Permanencia",
+        ],
+        default="Reingreso",
+    )
+
+    movimientos = (
+        base.groupby(
+            [
+                "AÑO",
+                "TIPO_MOVIMIENTO",
+            ]
+        )["ID_PERSONA_EXACTA"]
+        .nunique()
+        .unstack(
+            fill_value=0
+        )
+        .reindex(
+            range(2000, 2026),
+            fill_value=0,
+        )
+        .reset_index()
+    )
+
+    for columna in [
+        "Nuevo ingreso",
+        "Permanencia",
+        "Reingreso",
+    ]:
+        if columna not in movimientos.columns:
+            movimientos[columna] = 0
+
+    movimientos["TOTAL_ACTIVO"] = (
+        movimientos[
+            [
+                "Nuevo ingreso",
+                "Permanencia",
+                "Reingreso",
+            ]
+        ]
+        .sum(axis=1)
+        .astype(int)
+    )
+
+    # --------------------------------------------------------
+    # Salidas observadas
+    # Persona presente en t-1, pero ausente en t.
+    # --------------------------------------------------------
+
+    personas_por_anio = {
+        int(anio): set(
+            grupo[
+                "ID_PERSONA_EXACTA"
+            ].astype(str)
+        )
+        for anio, grupo
+        in base.groupby("AÑO")
+    }
+
+    salidas = []
+
+    for anio in range(
+        2000,
+        2026,
+    ):
+        if anio == 2000:
+            numero_salidas = 0
+
+        else:
+            personas_previas = (
+                personas_por_anio.get(
+                    anio - 1,
+                    set(),
+                )
+            )
+
+            personas_actuales = (
+                personas_por_anio.get(
+                    anio,
+                    set(),
+                )
+            )
+
+            numero_salidas = len(
+                personas_previas
+                - personas_actuales
+            )
+
+        salidas.append(
+            {
+                "AÑO": anio,
+                "SALIDAS_OBSERVADAS":
+                    numero_salidas,
+            }
+        )
+
+    salidas = pd.DataFrame(
+        salidas
+    )
+
+    movimientos = movimientos.merge(
+        salidas,
+        on="AÑO",
+        how="left",
+    )
+
+    movimientos[
+        "CRECIMIENTO_NETO"
+    ] = (
+        movimientos[
+            "TOTAL_ACTIVO"
+        ]
+        .diff()
+        .fillna(0)
+        .astype(int)
+    )
+
+    detalle = base[
+        [
+            "ID_PERSONA_EXACTA",
+            "AÑO",
+            "TIPO_MOVIMIENTO",
+        ]
+    ].copy()
+
+    return movimientos, detalle
+
+
+@st.cache_data(show_spinner=False)
+def calcular_evolucion_sexo(
+    df: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Calcula personas únicas por año y sexo consolidado.
+    """
+
+    if "SEXO_CONSOLIDADO" not in df.columns:
+        return pd.DataFrame(
+            columns=[
+                "AÑO",
+                "SEXO",
+                "PERSONAS",
+            ]
+        )
+
+    base = df[
+        [
+            "ID_PERSONA_EXACTA",
+            "AÑO",
+            "SEXO_CONSOLIDADO",
+        ]
+    ].copy()
+
+    base["SEXO"] = (
+        base[
+            "SEXO_CONSOLIDADO"
+        ]
+        .astype("string")
+        .str.strip()
+        .str.upper()
+        .replace(
+            {
+                "F": "MUJER",
+                "FEMENINO": "MUJER",
+                "M": "HOMBRE",
+                "MASCULINO": "HOMBRE",
+            }
+        )
+    )
+
+    base["SEXO"] = base[
+        "SEXO"
+    ].where(
+        base["SEXO"].isin(
+            [
+                "MUJER",
+                "HOMBRE",
+            ]
+        ),
+        "NO DETERMINADO",
+    )
+
+    evolucion = (
+        base.dropna(
+            subset=[
+                "ID_PERSONA_EXACTA",
+                "AÑO",
+            ]
+        )
+        .groupby(
+            [
+                "AÑO",
+                "SEXO",
+            ]
+        )["ID_PERSONA_EXACTA"]
+        .nunique()
+        .rename("PERSONAS")
+        .reset_index()
+    )
+
+    años = pd.DataFrame(
+        {
+            "AÑO": range(
+                2000,
+                2026,
+            )
+        }
+    )
+
+    sexos = pd.DataFrame(
+        {
+            "SEXO": [
+                "MUJER",
+                "HOMBRE",
+                "NO DETERMINADO",
+            ]
+        }
+    )
+
+    estructura = años.merge(
+        sexos,
+        how="cross",
+    )
+
+    evolucion = estructura.merge(
+        evolucion,
+        on=[
+            "AÑO",
+            "SEXO",
+        ],
+        how="left",
+    )
+
+    evolucion["PERSONAS"] = (
+        evolucion["PERSONAS"]
+        .fillna(0)
+        .astype(int)
+    )
+
+    return evolucion
+
 
 def resumen_categoria(
     df: pd.DataFrame,
