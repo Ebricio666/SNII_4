@@ -689,12 +689,34 @@ def render_panorama(df: pd.DataFrame) -> None:
         if sexo.empty:
             st.info("No hay información de sexo para esta selección.")
         else:
-            fig_sexo = px.donut(
-                sexo,
-                names="SEXO",
-                values="PERSONAS",
-                hole=0.58,
-            )
+            fig_sexo = px.pie(
+    sexo,
+    names="SEXO",
+    values="PERSONAS",
+    hole=0.58,
+)
+
+fig_sexo.update_traces(
+    textposition="inside",
+    textinfo="percent+label",
+    hovertemplate=(
+        "<b>%{label}</b><br>"
+        "Personas: %{value:,}<br>"
+        "Participación: %{percent}"
+        "<extra></extra>"
+    ),
+)
+
+fig_sexo.update_layout(
+    height=390,
+    margin=dict(
+        l=20,
+        r=20,
+        t=20,
+        b=20,
+    ),
+    legend_title_text="Sexo",
+)
             fig_sexo.update_layout(
                 height=390,
                 margin=dict(l=20, r=20, t=20, b=20),
