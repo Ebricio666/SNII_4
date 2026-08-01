@@ -525,219 +525,412 @@ def comparar_modelos(
 
     return evaluacion, proyeccion, mejor_modelo
 
-
 # ============================================================
 # MÓDULO 1: PANORAMA ACTUAL
 # ============================================================
 
 def render_panorama(df: pd.DataFrame) -> None:
+    """
+    Muestra el panorama actual del SNII a escala nacional,
+    estatal o institucional.
+    """
+
     st.header("1. Panorama de la investigación en México")
+
     st.markdown(
-        '<p class="snii-subtitle">'
-        "Consulta nacional, por entidad federativa o por institución."
-        "</p>",
+        """
+        <p class="snii-subtitle">
+            Consulta nacional, por entidad federativa o por institución.
+        </p>
+        """,
         unsafe_allow_html=True,
     )
 
-    controles = st.columns([1.1, 1.7, 1])
+    # ========================================================
+    # 1. CONTROLES DE CONSULTA
+    # ========================================================
+
+    controles = st.columns(
+        [1.1, 1.7, 1.0]
+    )
 
     with controles[0]:
+
         ambito = st.selectbox(
             "Nivel de consulta",
-            ["Nacional", "Por estado", "Por institución"],
+            [
+                "Nacional",
+                "Por estado",
+                "Por institución",
+            ],
+            key="panorama_ambito",
         )
 
     seleccion = None
 
     with controles[1]:
+
         if ambito == "Por estado":
-            if "ENTIDAD_FEDERATIVA_ANUAL" not in df.columns:
-                st.warning("La base no contiene entidad federativa.")
+
+            if (
+                "ENTIDAD_FEDERATIVA_ANUAL"
+                not in df.columns
+            ):
+
+                st.warning(
+                    "La base no contiene la columna "
+                    "ENTIDAD_FEDERATIVA_ANUAL."
+                )
+
                 return
 
-            opciones = sorted(
-                df["ENTIDAD_FEDERATIVA_ANUAL"]
+            opciones_estado = sorted(
+                df[
+                    "ENTIDAD_FEDERATIVA_ANUAL"
+                ]
                 .dropna()
                 .astype(str)
                 .unique()
                 .tolist()
             )
 
-            seleccion = st.selectbox("Entidad federativa", opciones)
+            if not opciones_estado:
+
+                st.warning(
+                    "No se encontraron entidades federativas."
+                )
+
+                return
+
+            seleccion = st.selectbox(
+                "Entidad federativa",
+                opciones_estado,
+                key="panorama_estado",
+            )
 
         elif ambito == "Por institución":
-            if "INSTITUCION_ANUAL" not in df.columns:
-                st.warning("La base no contiene institución.")
+
+            if (
+                "INSTITUCION_ANUAL"
+                not in df.columns
+            ):
+
+                st.warning(
+                    "La base no contiene la columna "
+                    "INSTITUCION_ANUAL."
+                )
+
                 return
 
-            opciones = sorted(
-                df["INSTITUCION_ANUAL"]
+            opciones_institucion = sorted(
+                df[
+                    "INSTITUCION_ANUAL"
+                ]
                 .dropna()
                 .astype(str)
                 .unique()
                 .tolist()
             )
+
+            if not opciones_institucion:
+
+                st.warning(
+                    "No se encontraron instituciones."
+                )
+
+                return
 
             seleccion = st.selectbox(
                 "Universidad o centro de investigación",
-                opciones,
+                opciones_institucion,
+                key="panorama_institucion",
             )
 
         else:
+
             st.text_input(
                 "Cobertura",
                 value="Estados Unidos Mexicanos",
                 disabled=True,
+                key="panorama_nacional",
             )
 
-    base_ambito = filtrar_ambito(df, ambito, seleccion)
+    # ========================================================
+    # 2. FILTRAR ÁMBITO
+    # ========================================================
 
-    with controles[2]:
-        años = sorted(
-            base_ambito["AÑO"].dropna().astype(int).unique().tolist()
+    base_ambito = filtrar_ambito(
+        df=df,
+        ambito=ambito,
+        seleccion=seleccion,
+    )
+
+    if base_ambito.empty:
+
+        st.warning(
+            "No hay registros para la selección."
         )
 
-        if not años:
-            st.warning("No hay registros para la selección.")
+        return
+
+    with controles[2]:
+
+        años_disponibles = sorted(
+            base_ambito[
+                "AÑO"
+            ]
+            .dropna()
+            .astype(int)
+            .unique()
+            .tolist()
+        )
+
+        if not años_disponibles:
+
+            st.warning(
+                "No se encontraron años disponibles."
+            )
+
             return
 
         año = st.selectbox(
             "Año de referencia",
-            años,
-            index=len(años) - 1,
+            años_disponibles,
+            index=len(años_disponibles) - 1,
+            key="panorama_anio",
         )
 
-    actual = base_ambito.loc[base_ambito["AÑO"].eq(año)].copy()
-    serie = serie_personas_anual(base_ambito)
+    actual = base_ambito.loc[
+        base_ambito[
+            "AÑO"
+        ].eq(año)
+    ].copy()
 
-    total_actual = actual["ID_PERSONA_EXACTA"].nunique()
-    total_previo = int(
-        serie.loc[serie["AÑO"].eq(año - 1), "PERSONAS"].sum()
+    serie = serie_personas_anual(
+        base_ambito
     )
-    delta = total_actual - total_previo if total_previo else None
 
-    mujeres = (
-        actual.loc[
-            actual.get(
-                "SEXO_CONSOLIDADO",
-                pd.Series(index=actual.index, dtype="string"),
-            )
-            .astype("string")
-            .str.upper()
-            .eq("MUJER"),
-            "ID_PERSONA_EXACTA",
+    # ========================================================
+    # 3. INDICADORES PRINCIPALES
+    # ========================================================
+
+    total_actual = int(
+        actual[
+            "ID_PERSONA_EXACTA"
         ].nunique()
-        if "SEXO_CONSOLIDADO" in actual.columns
+    )
+
+    valor_previo = serie.loc[
+        serie[
+            "AÑO"
+        ].eq(año - 1),
+        "PERSONAS",
+    ]
+
+    total_previo = (
+        int(valor_previo.iloc[0])
+        if not valor_previo.empty
         else 0
     )
+
+    delta = (
+        total_actual - total_previo
+        if total_previo > 0
+        else None
+    )
+
+    mujeres = 0
+
+    if "SEXO_CONSOLIDADO" in actual.columns:
+
+        sexo_normalizado = (
+            actual[
+                "SEXO_CONSOLIDADO"
+            ]
+            .astype("string")
+            .str.strip()
+            .str.upper()
+        )
+
+        mujeres = int(
+            actual.loc[
+                sexo_normalizado.isin(
+                    [
+                        "MUJER",
+                        "FEMENINO",
+                        "F",
+                    ]
+                ),
+                "ID_PERSONA_EXACTA",
+            ].nunique()
+        )
 
     porcentaje_mujeres = (
         mujeres / total_actual * 100
-        if total_actual
-        else 0
+        if total_actual > 0
+        else 0.0
     )
 
     instituciones = (
-        actual["INSTITUCION_ANUAL"].nunique(dropna=True)
-        if "INSTITUCION_ANUAL" in actual.columns
+        int(
+            actual[
+                "INSTITUCION_ANUAL"
+            ].nunique(
+                dropna=True
+            )
+        )
+        if "INSTITUCION_ANUAL"
+        in actual.columns
         else 0
     )
 
     entidades = (
-        actual["ENTIDAD_FEDERATIVA_ANUAL"].nunique(dropna=True)
-        if "ENTIDAD_FEDERATIVA_ANUAL" in actual.columns
+        int(
+            actual[
+                "ENTIDAD_FEDERATIVA_ANUAL"
+            ].nunique(
+                dropna=True
+            )
+        )
+        if "ENTIDAD_FEDERATIVA_ANUAL"
+        in actual.columns
         else 0
     )
 
     metricas = st.columns(4)
 
     metricas[0].metric(
-        f"Personas en {año}",
-        f"{total_actual:,}",
-        delta=f"{delta:+,}" if delta is not None else None,
+        label=f"Personas en {año}",
+        value=f"{total_actual:,}",
+        delta=(
+            f"{delta:+,}"
+            if delta is not None
+            else None
+        ),
     )
-    metricas[1].metric(
-        "Participación de mujeres",
-        f"{porcentaje_mujeres:.1f}%",
-        help=f"{mujeres:,} mujeres con sexo consolidado.",
-    )
-    metricas[2].metric("Instituciones", f"{instituciones:,}")
-    metricas[3].metric("Entidades representadas", f"{entidades:,}")
 
-    st.subheader("Evolución histórica")
+    metricas[1].metric(
+        label="Participación de mujeres",
+        value=f"{porcentaje_mujeres:.1f}%",
+        help=(
+            f"{mujeres:,} mujeres "
+            "con sexo consolidado."
+        ),
+    )
+
+    metricas[2].metric(
+        label="Instituciones",
+        value=f"{instituciones:,}",
+    )
+
+    metricas[3].metric(
+        label="Entidades representadas",
+        value=f"{entidades:,}",
+    )
+
+    # ========================================================
+    # 4. EVOLUCIÓN HISTÓRICA
+    # ========================================================
+
+    st.subheader(
+        "Evolución histórica"
+    )
 
     fig_serie = px.bar(
         serie,
         x="AÑO",
         y="PERSONAS",
-        labels={"PERSONAS": "Personas únicas", "AÑO": "Año"},
-        text_auto=False,
+        labels={
+            "PERSONAS": "Personas únicas",
+            "AÑO": "Año",
+        },
     )
+
     fig_serie.update_layout(
         height=430,
-        margin=dict(l=20, r=20, t=20, b=20),
+        margin=dict(
+            l=20,
+            r=20,
+            t=20,
+            b=20,
+        ),
         showlegend=False,
     )
-    st.plotly_chart(fig_serie, use_container_width=True)
+
+    st.plotly_chart(
+        fig_serie,
+        width="stretch",
+        key="grafica_evolucion_historica",
+    )
+
+    # ========================================================
+    # 5. SEXO Y NIVEL
+    # ========================================================
 
     izquierda, derecha = st.columns(2)
-with izquierda:
 
-    st.subheader(
-        f"Distribución por sexo · {año}"
-    )
+    with izquierda:
 
-    sexo = resumen_categoria(
-        actual,
-        "SEXO_CONSOLIDADO",
-        "SEXO",
-    )
-
-    if sexo.empty:
-
-        st.info(
-            "No hay información de sexo "
-            "para esta selección."
+        st.subheader(
+            f"Distribución por sexo · {año}"
         )
 
-    else:
-
-        fig_sexo = px.pie(
-            sexo,
-            names="SEXO",
-            values="PERSONAS",
-            hole=0.58,
+        sexo = resumen_categoria(
+            actual,
+            "SEXO_CONSOLIDADO",
+            "SEXO",
         )
 
-        fig_sexo.update_traces(
-            textposition="inside",
-            textinfo="percent+label",
-            hovertemplate=(
-                "<b>%{label}</b><br>"
-                "Personas: %{value:,}<br>"
-                "Participación: %{percent}"
-                "<extra></extra>"
-            ),
-        )
+        if sexo.empty:
 
-        fig_sexo.update_layout(
-            height=390,
-            margin=dict(
-                l=20,
-                r=20,
-                t=20,
-                b=20,
-            ),
-            legend_title_text="Sexo",
-        )
+            st.info(
+                "No hay información de sexo "
+                "para esta selección."
+            )
 
-        st.plotly_chart(
-            fig_sexo,
-            use_container_width=True,
-        )
-        
+        else:
+
+            fig_sexo = px.pie(
+                sexo,
+                names="SEXO",
+                values="PERSONAS",
+                hole=0.58,
+            )
+
+            fig_sexo.update_traces(
+                textposition="inside",
+                textinfo="percent+label",
+                hovertemplate=(
+                    "<b>%{label}</b><br>"
+                    "Personas: %{value:,}<br>"
+                    "Participación: %{percent}"
+                    "<extra></extra>"
+                ),
+            )
+
+            fig_sexo.update_layout(
+                height=390,
+                margin=dict(
+                    l=20,
+                    r=20,
+                    t=20,
+                    b=20,
+                ),
+                legend_title_text="Sexo",
+            )
+
+            st.plotly_chart(
+                fig_sexo,
+                width="stretch",
+                key="grafica_distribucion_sexo",
+            )
+
     with derecha:
-        st.subheader(f"Distribución por nivel SNII · {año}")
+
+        st.subheader(
+            f"Distribución por nivel SNII · {año}"
+        )
+
         nivel = resumen_categoria(
             actual,
             "NIVEL_SNII_ETIQUETA",
@@ -745,25 +938,81 @@ with izquierda:
         )
 
         if nivel.empty:
-            st.info("No hay información homologada de nivel.")
+
+            st.info(
+                "No hay información homologada "
+                "de nivel SNII."
+            )
+
         else:
+
+            orden_nivel = [
+                "CANDIDATO",
+                "NIVEL I",
+                "NIVEL II",
+                "NIVEL III",
+                "EMÉRITO",
+            ]
+
+            nivel[
+                "ORDEN_NIVEL"
+            ] = nivel[
+                "NIVEL"
+            ].astype("string").str.upper().map(
+                {
+                    etiqueta: posicion
+                    for posicion, etiqueta
+                    in enumerate(orden_nivel)
+                }
+            )
+
+            nivel = nivel.sort_values(
+                [
+                    "ORDEN_NIVEL",
+                    "NIVEL",
+                ],
+                na_position="last",
+            )
+
             fig_nivel = px.bar(
                 nivel,
                 x="NIVEL",
                 y="PERSONAS",
-                labels={"PERSONAS": "Personas"},
+                labels={
+                    "PERSONAS": "Personas",
+                    "NIVEL": "Nivel SNII",
+                },
             )
+
             fig_nivel.update_layout(
                 height=390,
-                margin=dict(l=20, r=20, t=20, b=20),
+                margin=dict(
+                    l=20,
+                    r=20,
+                    t=20,
+                    b=20,
+                ),
                 showlegend=False,
             )
-            st.plotly_chart(fig_nivel, use_container_width=True)
+
+            st.plotly_chart(
+                fig_nivel,
+                width="stretch",
+                key="grafica_distribucion_nivel",
+            )
+
+    # ========================================================
+    # 6. STEM E INSTITUCIONES
+    # ========================================================
 
     izquierda, derecha = st.columns(2)
 
     with izquierda:
-        st.subheader(f"Clasificación académica · {año}")
+
+        st.subheader(
+            f"Clasificación académica · {año}"
+        )
+
         stem = resumen_categoria(
             actual,
             "CLASIFICACION_STEM_ANUAL",
@@ -771,23 +1020,52 @@ with izquierda:
         )
 
         if stem.empty:
-            st.info("No hay clasificación académica disponible.")
+
+            st.info(
+                "No hay clasificación académica disponible."
+            )
+
         else:
+
+            stem_ordenado = stem.sort_values(
+                "PERSONAS",
+                ascending=True,
+            )
+
             fig_stem = px.bar(
-                stem.sort_values("PERSONAS"),
+                stem_ordenado,
                 x="PERSONAS",
                 y="CLASIFICACIÓN",
                 orientation="h",
+                labels={
+                    "PERSONAS": "Personas",
+                    "CLASIFICACIÓN": "Clasificación",
+                },
             )
+
             fig_stem.update_layout(
                 height=420,
-                margin=dict(l=20, r=20, t=20, b=20),
+                margin=dict(
+                    l=20,
+                    r=20,
+                    t=20,
+                    b=20,
+                ),
                 showlegend=False,
             )
-            st.plotly_chart(fig_stem, use_container_width=True)
+
+            st.plotly_chart(
+                fig_stem,
+                width="stretch",
+                key="grafica_clasificacion_academica",
+            )
 
     with derecha:
-        st.subheader(f"Principales instituciones · {año}")
+
+        st.subheader(
+            f"Principales instituciones · {año}"
+        )
+
         instituciones_df = resumen_categoria(
             actual,
             "INSTITUCION_ANUAL",
@@ -795,28 +1073,61 @@ with izquierda:
         ).head(15)
 
         if instituciones_df.empty:
-            st.info("No hay información institucional.")
+
+            st.info(
+                "No hay información institucional."
+            )
+
         else:
+
+            instituciones_ordenadas = (
+                instituciones_df.sort_values(
+                    "PERSONAS",
+                    ascending=True,
+                )
+            )
+
             fig_inst = px.bar(
-                instituciones_df.sort_values("PERSONAS"),
+                instituciones_ordenadas,
                 x="PERSONAS",
                 y="INSTITUCIÓN",
                 orientation="h",
+                labels={
+                    "PERSONAS": "Personas",
+                    "INSTITUCIÓN": "Institución",
+                },
             )
+
             fig_inst.update_layout(
                 height=420,
-                margin=dict(l=20, r=20, t=20, b=20),
+                margin=dict(
+                    l=20,
+                    r=20,
+                    t=20,
+                    b=20,
+                ),
                 showlegend=False,
             )
-            st.plotly_chart(fig_inst, use_container_width=True)
 
-    with st.expander("Ver datos utilizados"):
+            st.plotly_chart(
+                fig_inst,
+                width="stretch",
+                key="grafica_instituciones",
+            )
+
+    # ========================================================
+    # 7. DATOS UTILIZADOS
+    # ========================================================
+
+    with st.expander(
+        "Ver datos utilizados"
+    ):
+
         st.dataframe(
             actual,
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
-
 
 # ============================================================
 # MÓDULO 2: PROYECCIONES
@@ -966,7 +1277,7 @@ def render_proyecciones(df: pd.DataFrame) -> None:
         margin=dict(l=20, r=20, t=30, b=20),
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     izquierda, derecha = st.columns([1, 1.35])
 
@@ -979,7 +1290,7 @@ def render_proyecciones(df: pd.DataFrame) -> None:
 
         st.dataframe(
             tabla_evaluacion,
-            use_container_width=True,
+            st.plotly_chart(fig, width="stretch"),
             hide_index=True,
         )
 
@@ -995,7 +1306,7 @@ def render_proyecciones(df: pd.DataFrame) -> None:
 
         st.dataframe(
             tabla_futuro,
-            use_container_width=True,
+            st.plotly_chart(fig, width="stretch"),
             hide_index=True,
         )
 
@@ -1175,7 +1486,8 @@ def render_investigador(df: pd.DataFrame) -> None:
                 height=430,
                 margin=dict(l=20, r=20, t=20, b=20),
             )
-            st.plotly_chart(fig_nivel, use_container_width=True)
+            st.plotly_chart(fig_nivel,     st.plotly_chart(fig, width="stretch")
+)
 
     st.subheader("Estimación exploratoria de continuidad")
 
@@ -1233,7 +1545,7 @@ def render_investigador(df: pd.DataFrame) -> None:
     with st.expander("Ver historial anual"):
         st.dataframe(
             historial[columnas_historial],
-            use_container_width=True,
+            st.plotly_chart(fig, width="stretch")
             hide_index=True,
         )
 
